@@ -55,6 +55,8 @@ namespace nil {
                 /// The pointer to the implementation is a std::unique_ptr which makes
                 /// the class not copyable but only moveable.  Copying shouldn't be
                 /// required but is easy to implement.
+
+                template <typename ValueType>
                 class Parser {
                     class impl {
                         typename detail::ast::operand ast;
@@ -67,7 +69,7 @@ namespace nil {
                             auto last = expr.end();
 
                             boost::spirit::x3::ascii::space_type space;
-                            bool r = phrase_parse(first, last, detail::grammar(), space, ast_);
+                            bool r = phrase_parse(first, last, detail::grammar<ValueType>(), space, ast_);
 
                             if (!r || first != last) {
                                 std::string rest(first, last);
@@ -115,9 +117,10 @@ namespace nil {
                 ///
                 /// @param[in] expr  mathematical expression
                 /// @param[in] st    the symbol table for variables
-                inline double parse(std::string const &expr,
-                                    std::map<std::string, double> const &st = {}) {
-                    Parser parser;
+                template <typename ValueType>
+                inline ValueType parse(std::string const &expr,
+                                    std::map<std::string, ValueType> const &st = {}) {
+                    Parser<ValueType> parser;
                     parser.parse(expr);
                     return parser.evaluate(st);
                 }

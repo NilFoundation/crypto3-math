@@ -25,8 +25,11 @@
 
 #define BOOST_TEST_MODULE expression_arithmetic_test
 
-#include <vector>
-#include <cstdint>
+#include <cmath>
+#include <limits>
+#include <map>
+#include <stdexcept>
+#include <string>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -35,12 +38,33 @@
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
 #include <nil/crypto3/math/polynomial/polynom.hpp>
-#include <nil/crypto3/math/expressions/expression.hpp>
+#include <nil/crypto3/math/expressions/qi/expression.hpp>
 
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::math;
 
 typedef fields::bls12<381> FieldType;
+
+BOOST_AUTO_TEST_CASE(expression_parser_integration1) {
+    std::string expr = "pow(x/2 + sqrt(x**2/4 + y**3/24), 1/3)";
+    double x = 2.0, y = -1.0;
+
+    expressions::Parser<double> parser;
+    BOOST_CHECK_NO_THROW(parser.parse(expr));
+
+    std::map<std::string, double> symbol_table;
+    symbol_table.insert(std::make_pair("x", x));
+    symbol_table.insert(std::make_pair("y", y));
+
+    double result = 0;
+    BOOST_CHECK_NO_THROW(result = parser.evaluate(symbol_table));
+
+    double expected = std::pow(
+        x / 2. + std::sqrt(std::pow(x, 2.) / 4. + std::pow(y, 3.) / 24.),
+        1. / 3.);
+    BOOST_CHECK_CLOSE_FRACTION(result, expected,
+                               std::numeric_limits<double>::epsilon());
+}
 
 BOOST_AUTO_TEST_SUITE(expression_test_suite)
 
