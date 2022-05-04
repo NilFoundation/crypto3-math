@@ -39,9 +39,13 @@ macro(define_math_test name)
 endmacro()
 
 set(TESTS_NAMES
+    "breaker"
+    "composition_polynomial"
     "evaluation_domain"
     "expression"
     "kronecker_substitution"
+    "neighbors"
+    "periodic_column"
     "polynomial_arithmetic"
     "polynomial"
     "polynomial_view"

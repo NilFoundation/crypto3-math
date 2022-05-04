@@ -29,9 +29,9 @@
 
 #include <algorithm>
 #include <vector>
+#include <string_view>
 
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
-#include <string_view>
 
 namespace nil {
     namespace crypto3 {
