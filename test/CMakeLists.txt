@@ -43,7 +43,11 @@ set(TESTS_NAMES
     "expression"
     "kronecker_substitution"
     "polynomial_arithmetic"
-    "polynom")
+    "polynomial"
+    "polynomial_view"
+    "polynomial_dfs"
+    "polynomial_dfs_view"
+    "lagrange_interpolation")
 
 foreach(TEST_NAME ${TESTS_NAMES})
     define_math_test(${TEST_NAME})

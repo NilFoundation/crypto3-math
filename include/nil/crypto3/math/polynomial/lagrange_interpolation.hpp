@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------//
 // Copyright (c) 2020-2021 Mikhail Komarov <nemo@nil.foundation>
 // Copyright (c) 2020-2021 Nikita Kaskov <nbering@nil.foundation>
+// Copyright (c) 2021 Ilias Khairullin <ilias@nil.foundation>
 //
 // MIT License
 //
@@ -26,24 +27,39 @@
 #ifndef CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
 #define CRYPTO3_MATH_LAGRANGE_INTERPOLATION_HPP
 
-#include <nil/crypto3/math/polynomial/polynom.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
+#include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
 namespace nil {
     namespace crypto3 {
         namespace math {
-            namespace polynomial {
+            // Default implementation according to Wikipedia
+            // https://en.wikipedia.org/wiki/Lagrange_polynomial
+            template<typename InputRange,
+                     typename FieldValueType =
+                         typename std::iterator_traits<typename InputRange::iterator>::value_type::first_type>
+            typename std::enable_if<
+                std::is_same<std::pair<FieldValueType, FieldValueType>,
+                             typename std::iterator_traits<typename InputRange::iterator>::value_type>::value,
+                polynomial<FieldValueType>>::type
+                lagrange_interpolation(const InputRange &points) {
 
-                /*!
-                 * @brief Perform polynom Lagrange interpolation from points.
-                 */
-                template<typename FieldValueType>
-                polynom<FieldValueType> lagrange_interpolation(
-                    const std::vector<std::pair<FieldValueType, FieldValueType>> &points) {
+                std::size_t k = std::size(points);
 
-                    return polynom<FieldValueType>();
+                polynomial<FieldValueType> result;
+                for (std::size_t j = 0; j < k; ++j) {
+                    polynomial<FieldValueType> term({points[j].second});
+                    for (std::size_t m = 0; m < k; ++m) {
+                        if (m != j) {
+                            term = term * (polynomial<FieldValueType>({-points[m].first, FieldValueType::one()}) /
+                                           polynomial<FieldValueType>({points[j].first - points[m].first}));
+                        }
+                    }
+                    result = result + term;
                 }
-
-            }    // namespace polynomial
+                return result;
+            }
         }    // namespace math
     }        // namespace crypto3
 }    // namespace nil

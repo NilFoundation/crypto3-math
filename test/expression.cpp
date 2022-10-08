@@ -25,11 +25,8 @@
 
 #define BOOST_TEST_MODULE expression_arithmetic_test
 
-#include <cmath>
-#include <limits>
-#include <map>
-#include <stdexcept>
-#include <string>
+#include <vector>
+#include <cstdint>
 
 #include <boost/test/unit_test.hpp>
 #include <boost/test/data/test_case.hpp>
@@ -37,34 +34,13 @@
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
-#include <nil/crypto3/math/polynomial/polynom.hpp>
-#include <nil/crypto3/math/expressions/qi/expression.hpp>
+#include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/crypto3/math/expressions/expression.hpp>
 
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::math;
 
 typedef fields::bls12<381> FieldType;
-
-BOOST_AUTO_TEST_CASE(expression_parser_integration1) {
-    std::string expr = "pow(x/2 + sqrt(x**2/4 + y**3/24), 1/3)";
-    double x = 2.0, y = -1.0;
-
-    expressions::Parser<double> parser;
-    BOOST_CHECK_NO_THROW(parser.parse(expr));
-
-    std::map<std::string, double> symbol_table;
-    symbol_table.insert(std::make_pair("x", x));
-    symbol_table.insert(std::make_pair("y", y));
-
-    double result = 0;
-    BOOST_CHECK_NO_THROW(result = parser.evaluate(symbol_table));
-
-    double expected = std::pow(
-        x / 2. + std::sqrt(std::pow(x, 2.) / 4. + std::pow(y, 3.) / 24.),
-        1. / 3.);
-    BOOST_CHECK_CLOSE_FRACTION(result, expected,
-                               std::numeric_limits<double>::epsilon());
-}
 
 BOOST_AUTO_TEST_SUITE(expression_test_suite)
 
@@ -85,21 +61,21 @@ BOOST_AUTO_TEST_SUITE(expression_test_suite)
 
 BOOST_AUTO_TEST_CASE(expression_polynom_evaluation) {
 
-    // expressions::lazy_expression< polynomial::polynom<typename FieldType::value_type> > v0, v1;
+    // expressions::lazy_expression< polynomial<typename FieldType::value_type> > v0, v1;
 
-    // using expr_type = typename boost::proto::terminal<polynomial::polynom<typename FieldType::value_type>>::type;
+    // using expr_type = typename boost::proto::terminal<polynomial<typename FieldType::value_type>>::type;
 
-    // expressions::lazy_expression< polynomial::polynom<typename FieldType::value_type> >  expr = 
-    //     expressions::lazy_expression< polynomial::polynom<typename FieldType::value_type> > (v1 + v0);
+    // expressions::lazy_expression< polynomial<typename FieldType::value_type> >  expr =
+    //     expressions::lazy_expression< polynomial<typename FieldType::value_type> > (v1 + v0);
 
     // boost::proto::display_expr(expr);
 
     // v0.assign({1, 3, 4, 25, 6, 7, 7, 2});
     // v1.assign({9, 3, 11, 14, 7, 1, 5, 8});
 
-    // polynomial::polynom<typename FieldType::value_type> c_ans = {10, 6, 15, 39, 13, 8, 12, 10};
+    // polynomial<typename FieldType::value_type> c_ans = {10, 6, 15, 39, 13, 8, 12, 10};
 
-    // polynomial::polynom<typename FieldType::value_type> d = expr.evaluate();
+    // polynomial<typename FieldType::value_type> d = expr.evaluate();
 
     // for (std::size_t i = 0; i < c_ans.size(); ++i) {
     //     BOOST_CHECK_EQUAL(c_ans[i].data, d[i].data);
