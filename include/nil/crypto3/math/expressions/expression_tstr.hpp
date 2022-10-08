@@ -187,10 +187,11 @@ namespace nil {
 
                 };
 
-                template<typename ValueType, typename ExprType>
+                template< typename ExprType>
                 class ExpressionTstr {
 
                 public:
+                    constexpr ExpressionTstr(){}
                     static constexpr std::size_t count_str_len(const char* s) {
                         std::size_t res = 0;
                         for (; s[res] != '\0'; res++)
@@ -206,7 +207,7 @@ namespace nil {
                     static constexpr const std::size_t calculation_array_size =
                         ops_count[0] + ops_count[1] + ops_count[2] + +ops_count[3];
                     static constexpr const std::size_t calculation_array_size_2 = ops_count[0] + ops_count[1];
-
+template <typename ValueType>
                     static constexpr const ValueType
                         eval(std::pair<std::vector<const char*>, std::vector<ValueType>> dictionary) {
                         std::array<ValueType, calculation_array_size + 1> var_array;
@@ -275,13 +276,13 @@ namespace nil {
                                     break;
                                 }
                             }
-                            if (pos == std::string::npos) {
-                                //   std::cout << 0 << std::endl;
-                                auto r = ExprType::template parse_value_type<ValueType>(start_pos, end_pos);
-                                //   std::cout << r << std::endl;
-                                var_pos_array[i] = pos;
-                                var_array[i] = ValueType(r);
-                            }
+//                            if (pos == std::string::npos) {
+//                                //   std::cout << 0 << std::endl;
+//                                auto r = ExprType::template parse_value_type<ValueType>(start_pos, end_pos);
+//                                //   std::cout << r << std::endl;
+//                                var_pos_array[i] = pos;
+//                                var_array[i] = ValueType(r);
+//                            }
                         }
 
                         cnt = 0;
