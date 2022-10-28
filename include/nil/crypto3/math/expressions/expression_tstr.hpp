@@ -73,7 +73,6 @@ namespace nil {
                 class ExpressionTstr {
 
                 public:
-
                     // This is used to calculate variables names length in dictionary
                     static constexpr std::size_t count_str_len(const char* s) {
                         std::size_t res = 0;
@@ -166,9 +165,9 @@ namespace nil {
                                     break;
                                 }
                             }
-                            // This can be used if we want to parse variable values in the expression (for example 5 in 5 * x)
-                            // We need to determine how to parse the specific ValueType in X::parse_value_type<ValueType>(start_pos, end_pos)
-                            // in expression_string.hpp
+                            // This can be used if we want to parse variable values in the expression (for example 5 in
+                            // 5 * x) We need to determine how to parse the specific ValueType in
+                            // X::parse_value_type<ValueType>(start_pos, end_pos) in expression_string.hpp
                             //                            if (pos == std::string::npos) {
                             //                                //   std::cout << 0 << std::endl;
                             //                                auto r = ExprType::template
@@ -237,6 +236,11 @@ namespace nil {
                     }
                 };
 
+                template<typename ExpressionType, typename ValueType>
+                ValueType evaluate(std::pair<std::vector<const char*>, std::vector<ValueType>> dictionary) {
+                    typedef ExpressionType expression_type;
+                    return expression_type::eval(dictionary);
+                }
             }    // namespace expressions_tstr
         }        // namespace math
     }            // namespace crypto3

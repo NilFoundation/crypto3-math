@@ -40,6 +40,8 @@
 
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/expressions/expression_tstr.hpp>
+
+#include <nil/crypto3/math/expressions/expression_string.hpp>
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::math;
 using namespace nil::crypto3::math::expressions_tstr;
@@ -47,7 +49,7 @@ typedef fields::bls12_fr<381> FieldType;
 
 BOOST_AUTO_TEST_SUITE(expression_test_suite)
 //
- BOOST_AUTO_TEST_CASE(expression_expression) {
+ BOOST_AUTO_TEST_CASE(expression_expression_evaluate) {
 
      constexpr const char *v1 = "v1";
      constexpr const char *v0 = "v0";
@@ -62,9 +64,9 @@ BOOST_AUTO_TEST_SUITE(expression_test_suite)
 
      auto dictionary = std::make_pair(s, ps);
 
-     typedef X<decltype("v0 + v1"_tstr)> expr_str;
+     typedef ExpressionTstr<X<decltype("v0 + v1"_tstr)>> expr;
 
-     FieldType::value_type c =  ExpressionTstr<expr_str>::eval(dictionary);
+     FieldType::value_type c = evaluate<expr>(dictionary);
 
      BOOST_CHECK_EQUAL(c.data, p2.data);
 
@@ -85,9 +87,9 @@ BOOST_AUTO_TEST_SUITE(expression_test_suite)
 
      auto dictionary = std::make_pair(s, ps);
 
-     typedef X<decltype("v0 - v1"_tstr)> expr_str;
+     typedef ExpressionTstr<X<decltype("v0 - v1"_tstr)>> expr;
 
-     FieldType::value_type c =  ExpressionTstr<expr_str>::eval(dictionary);
+     FieldType::value_type c = evaluate<expr>(dictionary);
 
      BOOST_CHECK_EQUAL(c.data, p2.data);
 
@@ -108,9 +110,9 @@ BOOST_AUTO_TEST_SUITE(expression_test_suite)
 
      auto dictionary = std::make_pair(s, ps);
 
-     typedef X<decltype("v0 * v1"_tstr)> expr_str;
+     typedef ExpressionTstr<X<decltype("v0 * v1"_tstr)>> expr;
 
-     FieldType::value_type c =  ExpressionTstr<expr_str>::eval(dictionary);
+     FieldType::value_type c = evaluate<expr>(dictionary);
 
      BOOST_CHECK_EQUAL(c.data, p2.data);
 
@@ -131,9 +133,9 @@ BOOST_AUTO_TEST_SUITE(expression_test_suite)
 
      auto dictionary = std::make_pair(s, ps);
 
-     typedef X<decltype("v1 / v0"_tstr)> expr_str;
+     typedef ExpressionTstr<X<decltype("v1 / v0"_tstr)>> expr;
 
-     FieldType::value_type c = ExpressionTstr<expr_str>::eval(dictionary);
+     FieldType::value_type c = evaluate<expr>(dictionary);
 
      BOOST_CHECK_EQUAL(c.data, p2.data);
 
@@ -151,10 +153,15 @@ BOOST_AUTO_TEST_SUITE(expression_test_suite)
      polynomial<FieldType::value_type> p2;
      p2 = p0 + p1 / p0;
 
+     typedef ExpressionTstr<X<decltype("v0 + v1 / v0"_tstr)>> expr;
+
+
      std::vector<const char *> s = {v0, v1};
      std::vector<polynomial<FieldType::value_type>> ps = {p0, p1};
+
      auto dictionary = std::make_pair(s, ps);
-     auto res = ExpressionTstr<X<decltype("v0 + v1 / v0"_tstr)>>::eval(dictionary);
+
+     auto res = evaluate<expr>(dictionary);
 
 
      for (std::size_t i = 0; i < res.size(); i++) {
@@ -165,8 +172,11 @@ BOOST_AUTO_TEST_SUITE(expression_test_suite)
      FieldType::value_type val1 = FieldType::value_type(15);
      auto val2 = val0 + val1 / val0;
      std::vector<FieldType::value_type> vals = {val0, val1};
+
      auto dictionary2 = std::make_pair(s, vals);
-     auto res2 = ExpressionTstr<X<decltype("v0 + v1 / v0"_tstr)>>::eval(dictionary2);
+
+     auto res2 = evaluate<expr>(dictionary2);
+
      BOOST_CHECK_EQUAL(res2.data, val2.data);
  }
 // BOOST_AUTO_TEST_CASE(expression_expression_1) {
