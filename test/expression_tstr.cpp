@@ -74,6 +74,36 @@ BOOST_AUTO_TEST_CASE(expression_expression_addition) {
 
 }
 
+
+BOOST_AUTO_TEST_CASE(expression_expression_addition1) {
+    constexpr const char *v0 = "v0";
+    constexpr const char *v1 = "v1";
+    constexpr const char *v2 = "v2";
+    constexpr const char *v3 = "v3";
+
+    FieldType::value_type p0 = FieldType::value_type(5);
+    FieldType::value_type p1 = FieldType::value_type(15);
+    FieldType::value_type p2 = FieldType::value_type(5);
+    FieldType::value_type p3 = FieldType::value_type(15);
+
+    FieldType::value_type p4 = p0 + p1 + p2 * p3;
+
+    std::vector<const char *> s = {v0, v1, v2, v3};
+    std::vector<FieldType::value_type> ps = {p0, p1, p2, p3};
+
+    auto dictionary = std::make_pair(s, ps);
+
+    constexpr auto var0 = "v0 + v1"_tstr;
+    constexpr auto var1 = "v2 * v3"_tstr;
+    constexpr auto var2 = var0 + var1;
+
+    typedef ExpressionTstr<X<decltype(var2)>> expr;
+
+    FieldType::value_type c = evaluate<expr>(dictionary);
+
+    BOOST_CHECK_EQUAL(c.data, p4.data);
+
+}
  BOOST_AUTO_TEST_CASE(expression_expression_evaluate) {
 
      constexpr const char *v1 = "v1";
