@@ -75,11 +75,128 @@ namespace nil {
                     return {};
                 }
 
+                template<typename T, T... Chars1, T... Chars2>
+                constexpr tstring< Chars1...,' ', '+', ' ',Chars2...>operator+(tstring<Chars1...>,tstring<Chars2...>){
+                    return std::integer_sequence<char, Chars1...,' ', '+', ' ',Chars2...>();
+                }
                 template<typename>
                 class X;
 
                 template<char... elements>
-                class X<tstring<elements...>> {
+                class X<tstring< elements...>> {
+                public:
+                    // X(){}/
+                    using bstr = boost::metaparse::string<elements...>;
+                    static constexpr boost::metaparse::string<elements...> get_chars() {
+                        constexpr const boost::metaparse::string<elements...>
+                            s;    // char str[sizeof...(elements) + 1] = {elements..., '\0'};
+                        return s;
+                    }
+
+                    static constexpr const char* get_string() {
+                        constexpr const char str[sizeof...(elements) + 1] = {elements..., '\0'};
+                        return str;
+                    }
+
+                    template <typename ValueType>
+                    static constexpr ValueType parse_value_type(std::size_t start, std::size_t end) {
+                        constexpr const char str[sizeof...(elements) + 1] = {elements..., '\0'};
+                        const char *space = " ";
+                        //                        repeated<one_char>
+                        std::size_t cnt = -1;
+                        ValueType res = 0;
+                        for (std::size_t i = start; i< end; i++){
+                            if (str[i] != space[0]){
+                                cnt+= 1;
+                            }
+                        }
+                        for (std::size_t i = start; i< end; i++){
+                            if (str[i] != space[0]){
+                                res+=ValueType((int)(str[i])-(int)('0'))*ValueType(10).pow(cnt);//(int)(pow(10,cnt)) ;
+                                                                                                          //    std::cout<<ValueType((int)(str[i])-(int)('0'))*ValueType(10).pow(cnt)<<std::endl;//((int)(str[i])-(int)('0'))*(int)(pow(10,cnt))<<std::endl;
+                                cnt-=1;
+                            }
+                        }
+                        return res;
+                    }
+                    static constexpr const char* str = get_string();
+
+                    constexpr static const std::size_t get_str_len() {
+                        constexpr char str[sizeof...(elements) + 1] = {elements..., '\0'};
+
+                        std::size_t size = 0;
+                        for (; str[size] != '\0'; size++) {
+                        }
+                        return size;
+                    }
+
+                    constexpr static const std::array<std::size_t, 4> count_ops() {
+                        constexpr char str[sizeof...(elements) + 1] = {elements..., '\0'};
+                        std::size_t plus = 0;
+                        std::size_t minus = 0;
+                        std::size_t div = 0;
+                        std::size_t mul = 0;
+                        constexpr const char* div_str = "/";
+                        constexpr const char* mul_str = "*";
+                        constexpr const char* plus_str = "+";
+                        constexpr const char* minus_str = "-";
+                        size_t i = 0;
+                        size_t cnt = 0;
+                        using boost::spirit::qi::ascii::space;
+
+                        for (; str[i] != '\0'; i++) {
+                            if (str[i] == plus_str[0]) {
+                                plus++;
+                            } else {
+                                if (str[i] == minus_str[0]) {
+                                    minus++;
+                                } else {
+                                    if (str[i] == mul_str[0]) {
+                                        mul++;
+                                    } else {
+                                        if (str[i] == div_str[0]) {
+                                            div++;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        std::array<std::size_t, 4> ops = {plus, minus, mul, div};
+                        return ops;
+                        // return cnt + 1;
+                    }
+                    //
+                    static constexpr std::size_t find_str(const char* substr, std::size_t n, std::size_t start_pos,
+                                                          std::size_t end_pos) {
+                        constexpr char str[sizeof...(elements) + 1] = {elements..., '\0'};
+
+                        std::size_t size = 0;
+                        for (; str[size] != '\0'; size++) {
+                        }
+                        size_t j = 0;
+                        size_t i = start_pos;
+                        if (i + n < size) {
+                            for (; i < end_pos; i++) {
+                                for (j = 0; j < n && str[i + j] == substr[j]; j++)
+                                    ;
+                                if (j == n) {
+                                    return i;
+                                }
+                            }
+                        }
+                        return std::string::npos;
+                    }
+                    static constexpr const std::array<std::size_t, 4> ops_cnt = count_ops();
+
+                    static constexpr const std::size_t str_len = get_str_len();
+
+                };
+                template<typename>
+                class X;
+
+                template<char... elements>
+                class X<const std::integer_sequence<char, elements...>> {
                 public:
                     // X(){}/
                     using bstr = boost::metaparse::string<elements...>;

@@ -49,6 +49,31 @@ typedef fields::bls12_fr<381> FieldType;
 
 BOOST_AUTO_TEST_SUITE(expression_test_suite)
 //
+
+BOOST_AUTO_TEST_CASE(expression_expression_addition) {
+
+    constexpr const char *v = "var";
+
+    FieldType::value_type p = FieldType::value_type(5);
+
+    FieldType::value_type p2 = p + p;
+
+    std::vector<const char *> s = {v};
+    std::vector<FieldType::value_type> ps = {p};
+
+    auto dictionary = std::make_pair(s, ps);
+
+    constexpr auto var = "var"_tstr;
+    constexpr auto var2 = var + var;
+
+    typedef ExpressionTstr<X<decltype(var2)>> expr;
+
+    auto c = evaluate<expr>(dictionary);
+
+    BOOST_CHECK_EQUAL(c.data, p2.data);
+
+}
+
  BOOST_AUTO_TEST_CASE(expression_expression_evaluate) {
 
      constexpr const char *v1 = "v1";
