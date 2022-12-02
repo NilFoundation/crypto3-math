@@ -49,7 +49,36 @@ typedef fields::bls12_fr<381> FieldType;
 
 BOOST_AUTO_TEST_SUITE(expression_test_suite)
 //
+BOOST_AUTO_TEST_CASE(expression_expression_multiplication) {
 
+    constexpr const char *v = "var0";
+    constexpr const char *v1 = "var1";
+    constexpr const char *v2 = "var2";
+    constexpr const char *v3 = "var3";
+    FieldType::value_type p = FieldType::value_type(5);
+    FieldType::value_type p1 = FieldType::value_type(15);
+    FieldType::value_type p2 = FieldType::value_type(10);
+    FieldType::value_type p3 = FieldType::value_type(3);
+    FieldType::value_type p4 = (p + p * p1) * (p1 - p2 + p3);
+
+    std::vector<const char *> s = {v,v1,v2, v3};
+    std::vector<FieldType::value_type> ps = {p,p1,p2,p3};
+
+    auto dictionary = std::make_pair(s, ps);
+    constexpr auto var0 = "var0 + var0 * var1"_tstr;
+    constexpr auto var1 = "var1 - var2 + var3"_tstr;
+    constexpr auto cc = var1.template get_tsubstring<2>();
+    constexpr auto var2 = var1 * var0;
+    constexpr auto var3 = var0 * var1;
+    typedef ExpressionTstr <decltype(var2) >expr;
+    typedef ExpressionTstr < decltype(var3) >expr2;
+    auto result = evaluate<expr>(dictionary);
+    auto result2 = evaluate<expr2>(dictionary);
+    BOOST_CHECK_EQUAL(p4.data, result.data);
+    BOOST_CHECK_EQUAL(p4.data, result2.data);
+
+    std::cout<<std::endl;
+}
 BOOST_AUTO_TEST_CASE(expression_expression_addition) {
 
     constexpr const char *v = "var";
@@ -66,7 +95,7 @@ BOOST_AUTO_TEST_CASE(expression_expression_addition) {
     constexpr auto var = "var"_tstr;
     constexpr auto var2 = var + var;
 
-    typedef ExpressionTstr<X<decltype(var2)>> expr;
+    typedef ExpressionTstr<decltype(var2)> expr;
 
     auto c = evaluate<expr>(dictionary);
 
@@ -97,7 +126,7 @@ BOOST_AUTO_TEST_CASE(expression_expression_addition1) {
     constexpr auto var1 = "v2 * v3"_tstr;
     constexpr auto var2 = var0 + var1;
 
-    typedef ExpressionTstr<X<decltype(var2)>> expr;
+    typedef ExpressionTstr<decltype(var2)> expr;
 
     FieldType::value_type c = evaluate<expr>(dictionary);
 
@@ -118,8 +147,8 @@ BOOST_AUTO_TEST_CASE(expression_expression_addition1) {
      std::vector<FieldType::value_type> ps = {p0, p1};
 
      auto dictionary = std::make_pair(s, ps);
-
-     typedef ExpressionTstr<X<decltype("v0 + v1"_tstr)>> expr;
+constexpr auto var = "v0 + v1"_tstr;
+     typedef ExpressionTstr<decltype(var)> expr;
 
      FieldType::value_type c = evaluate<expr>(dictionary);
 
@@ -141,8 +170,8 @@ BOOST_AUTO_TEST_CASE(expression_expression_addition1) {
      std::vector<FieldType::value_type> ps = {p0, p1};
 
      auto dictionary = std::make_pair(s, ps);
-
-     typedef ExpressionTstr<X<decltype("v0 - v1"_tstr)>> expr;
+     auto var = "v0 - v1"_tstr;
+     typedef ExpressionTstr<decltype(var)> expr;
 
      FieldType::value_type c = evaluate<expr>(dictionary);
 
@@ -164,8 +193,8 @@ BOOST_AUTO_TEST_CASE(expression_expression_addition1) {
      std::vector<FieldType::value_type> ps = {p0, p1};
 
      auto dictionary = std::make_pair(s, ps);
-
-     typedef ExpressionTstr<X<decltype("v0 * v1"_tstr)>> expr;
+     auto var = "v0 * v1"_tstr;
+     typedef ExpressionTstr<decltype(var)> expr;
 
      FieldType::value_type c = evaluate<expr>(dictionary);
 
@@ -187,8 +216,8 @@ BOOST_AUTO_TEST_CASE(expression_expression_addition1) {
      std::vector<FieldType::value_type> ps = {p0, p1};
 
      auto dictionary = std::make_pair(s, ps);
-
-     typedef ExpressionTstr<X<decltype("v1 / v0"_tstr)>> expr;
+     auto var = "v1 / v0"_tstr;
+     typedef ExpressionTstr<decltype(var)> expr;
 
      FieldType::value_type c = evaluate<expr>(dictionary);
 
@@ -207,8 +236,8 @@ BOOST_AUTO_TEST_CASE(expression_expression_addition1) {
      // std::cout<<x.data<<std::endl;
      polynomial<FieldType::value_type> p2;
      p2 = p0 + p1 / p0;
-
-     typedef ExpressionTstr<X<decltype("v0 + v1 / v0"_tstr)>> expr;
+     auto var = "v0 + v1 / v0"_tstr;
+     typedef ExpressionTstr<decltype(var)> expr;
 
 
      std::vector<const char *> s = {v0, v1};
@@ -234,115 +263,6 @@ BOOST_AUTO_TEST_CASE(expression_expression_addition1) {
 
      BOOST_CHECK_EQUAL(res2.data, val2.data);
  }
-// BOOST_AUTO_TEST_CASE(expression_expression_1) {
-//
-//     constexpr const char *v1 = "v1";
-//     constexpr const char *v0 = "v0";
-//
-//     FieldType::value_type p0 = FieldType::value_type(5);
-//     FieldType::value_type p1 = FieldType::value_type(15);
-//     FieldType::value_type p2 = p0 + p1 / p0;
-//
-//     std::vector<const char *> s = {v0, v1};
-//
-//     std::vector<FieldType::value_type> ps = {p0, p1};
-//     auto dictionary = std::make_pair(s, ps);
-//     typedef decltype("v0 + v1 / v0"_tstr) expr_str;
-//     using expr_type = ExpressionTstr<FieldType::value_type, X<expr_str>>;
-//
-//     FieldType::value_type c = expr_type::eval(dictionary);
-//     BOOST_CHECK_EQUAL(c.data, p2.data);
-// }
-////
-// BOOST_AUTO_TEST_CASE(expression_expression_2) {
-//
-//     constexpr const char *v1 = "v1";
-//     constexpr const char *v0 = "v0";
-//
-//     FieldType::value_type p0 = FieldType::value_type(5);
-//     FieldType::value_type p1 = FieldType::value_type(15);
-//     FieldType::value_type p2 = p0 + p1 - p0;
-//
-//     std::vector<const char *> s = {v0, v1};
-//
-//     std::vector<FieldType::value_type> ps = {p0, p1};
-//     auto dictionary = std::make_pair(s, ps);
-//     typedef decltype("v0 + v1 - v0"_tstr) expr_str;
-//     using expr_type = ExpressionTstr<FieldType::value_type, X<expr_str>>;
-//
-//     FieldType::value_type c = expr_type::eval(dictionary);
-//     BOOST_CHECK_EQUAL(c.data, p2.data);
-// }
-//
-// BOOST_AUTO_TEST_CASE(expression_expression_3) {
-//
-//     constexpr const char *v1 = "v1";
-//     constexpr const char *v0 = "v0";
-//
-//     FieldType::value_type p0 = FieldType::value_type(5);
-//     FieldType::value_type p1 = FieldType::value_type(15);
-//     FieldType::value_type p2 = p0 * p1;
-//
-//     std::vector<const char *> s = {v0, v1};
-//
-//     std::vector<FieldType::value_type> ps = {p0, p1};
-//     auto dictionary = std::make_pair(s, ps);
-//     typedef decltype("v0 * v1"_tstr) expr_str;
-//     using expr_type = ExpressionTstr<FieldType::value_type, X<expr_str>>;
-//
-//     FieldType::value_type c = expr_type::eval(dictionary);
-//     BOOST_CHECK_EQUAL(c.data, p2.data);
-// }
 
-//
-// BOOST_AUTO_TEST_CASE(expression_expression_4) {
-//
-//     constexpr const char *v1 = "v1";
-//     constexpr const char *v0 = "v0";
-//
-//     FieldType::value_type val0 = FieldType::value_type(5);
-//     FieldType::value_type val1 = FieldType::value_type(15);
-//     FieldType::value_type val2 = p0 + FieldType::value_type(15) * p1 * p0;
-//
-//     std::vector<const char *> s = {v0, v1};
-//
-//     std::vector<FieldType::value_type> ps = {p0, p1};
-//     auto dictionary = std::make_pair(s, ps);
-//     typedef decltype("v0 + 15 * v1 * v0"_tstr) expr_str;
-//     using expr_type = ExpressionTstr<X<decltype("v0 + 15 * v1 * v0"_tstr)>>;
-//     auto c = expr_type::eval(dictionary);
-//
-//     // XExpressionTstr<X<decltype("v0 + 15 * v1 * v0"_tstr)>>();
-//     //    expr_type();
-//     //auto c = expr_type.template eval<typename FieldType::value_type >(dictionary);
-//     //  FieldType::value_type c = expr_type::eval(dictionary);
-//     BOOST_CHECK_EQUAL(c.data, p2.data);
-//     auto c =
-// }
-//
-// BOOST_AUTO_TEST_CASE(expression_expression_4) {
-//
-//     constexpr const char *v1 = "v1";
-//     constexpr const char *v0 = "v0";
-//
-//     FieldType::value_type p0 = FieldType::value_type(5);
-//     FieldType::value_type p1 = FieldType::value_type(15);
-//     FieldType::value_type p2 = p0 + FieldType::value_type(15) * p1 * p0;
-//
-//     std::vector<const char *> s = {v0, v1};
-//
-//     std::vector<FieldType::value_type> ps = {p0, p1};
-//     auto dictionary = std::make_pair(s, ps);
-//     typedef decltype("v0 + 15 * v1 * v0"_tstr) expr_str;
-//     using expr_type = ExpressionTstr<X<decltype("v0 + 15 * v1 * v0"_tstr)>>;
-//     auto c = expr_type::eval(dictionary);
-//
-//    // XExpressionTstr<X<decltype("v0 + 15 * v1 * v0"_tstr)>>();
-////    expr_type();
-//   //auto c = expr_type.template eval<typename FieldType::value_type >(dictionary);
-//  //  FieldType::value_type c = expr_type::eval(dictionary);
-//    BOOST_CHECK_EQUAL(c.data, p2.data);
-//    auto c =
-//}
 
 BOOST_AUTO_TEST_SUITE_END()
