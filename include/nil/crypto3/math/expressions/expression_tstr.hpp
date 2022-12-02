@@ -166,14 +166,14 @@ namespace nil {
                             // This can be used if we want to parse variable values in the expression (for example 5 in
                             // 5 * x) We need to determine how to parse the specific ValueType in
                             // X::parse_value_type<ValueType>(start_pos, end_pos) in expression_string.hpp
-                            //                            if (pos == std::string::npos) {
-                            //                                //   std::cout << 0 << std::endl;
-                            //                                auto r = ExprType::template
-                            //                                parse_value_type<ValueType>(start_pos, end_pos);
-                            //                                //   std::cout << r << std::endl;
-                            //                                var_pos_array[i] = pos;
-                            //                                var_array[i] = ValueType(r);
-                            //                            }
+                                                        if (pos == std::string::npos) {
+                                                            //   std::cout << 0 << std::endl;
+                                                            auto r = ExprType::template
+                                                            parse_value_type<ValueType>(start_pos, end_pos);
+                                                            //   std::cout << r << std::endl;
+                                                            var_pos_array[i] = pos;
+                                                            var_array[i] = ValueType(r);
+                                                        }
                         }
 
                         cnt = 0;
