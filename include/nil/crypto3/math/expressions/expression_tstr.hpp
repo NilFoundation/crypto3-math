@@ -130,7 +130,6 @@ namespace nil {
                             start_pos = 0;
                             std::size_t pos = 0;
                             while (pos != std::string::npos && start_pos < str_len - 1) {
-                                // std::size_t
                                 pos = ExprType::find_str(ops[i], 1, start_pos, str_len);
                                 if (pos != std::string::npos) {
                                     ops_pos_array[cnt] = pos;
@@ -138,7 +137,6 @@ namespace nil {
                                     cnt++;
                                     start_pos = pos + 1;
                                 }
-                                // std::get<0>(dictionary)[i].len();
                             }
                         }
                         std::sort(ops_index_array.begin(), ops_index_array.end(),
@@ -152,11 +150,11 @@ namespace nil {
                             } else {
                                 end_pos = ops_pos_array[ops_index_array[i]];
                             }
-                            //  std::cout <<end_pos << std::endl;
+
                             for (std::size_t j = 0; j < std::get<0>(dictionary).size(); j++) {
                                 std::size_t name_len = count_str_len(std::get<0>(dictionary)[j]);
                                 pos = ExprType::find_str(std::get<0>(dictionary)[j], name_len, start_pos, end_pos);
-                                //  std::cout<<pos<<std::endl;
+
                                 if (pos != std::string::npos) {
                                     var_pos_array[i] = pos;
                                     var_array[i] = std::get<1>(dictionary)[j];
@@ -179,29 +177,29 @@ namespace nil {
                         }
 
                         cnt = 0;
-                        ValueType res = var_array[0];    // var_index_array[0]];
+                        ValueType res = var_array[0];
 
                         for (std::size_t i = 0; i < calculation_array_size; i++) {
 
                             if (op_codes_array[ops_index_array[i]] == 3 || op_codes_array[ops_index_array[i]] == 2) {
                                 if (op_codes_array[ops_index_array[i]] == 2) {
-                                    res = var_array[i] *       // var_index_array[i]] *
-                                          var_array[i + 1];    // var_index_array[i + 1]];
+                                    res = var_array[i] *
+                                          var_array[i + 1];
                                 } else {
                                     if (op_codes_array[ops_index_array[i]] == 3) {
-                                        res = var_array[i] /       // var_index_array[i]] /
-                                              var_array[i + 1];    // var_index_array[i + 1]];
+                                        res = var_array[i] /
+                                              var_array[i + 1];
                                     }
                                 }
                                 i++;
                                 while (i < calculation_array_size) {
                                     if (op_codes_array[ops_index_array[i]] == 3) {
 
-                                        res = res / var_array[i + 1];    // var_index_array[i + 1]];
+                                        res = res / var_array[i + 1];
                                         i++;
                                     } else {
                                         if (op_codes_array[ops_index_array[i]] == 2) {
-                                            res = res * var_array[i + 1];    // var_index_array[i + 1]];
+                                            res = res * var_array[i + 1];
                                             i++;
                                         } else {
                                             break;
@@ -215,10 +213,10 @@ namespace nil {
 
                             } else {
                                 op_codes_array_2[cnt] = op_codes_array[ops_index_array[i]];
-                                var_array_2[cnt] = var_array[i];    // var_index_array[i]];
+                                var_array_2[cnt] = var_array[i];
                                 cnt++;
                                 if (i == calculation_array_size - 1) {
-                                    var_array_2[cnt] = var_array[i + 1];    // var_index_array[i + 1]];
+                                    var_array_2[cnt] = var_array[i + 1];
                                 }
                             }
                         }
