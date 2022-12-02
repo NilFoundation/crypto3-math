@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(expression_expression_multiplication) {
     auto dictionary = std::make_pair(s, ps);
     constexpr auto var0 = "var0 + var0 * var1"_tstr;
     constexpr auto var1 = "var1 - var2 + var3"_tstr;
-    constexpr auto cc = var1.template get_tsubstring<2>();
+
     constexpr auto var2 = var1 * var0;
     constexpr auto var3 = var0 * var1;
     typedef ExpressionTstr <decltype(var2) >expr;
