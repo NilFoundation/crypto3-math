@@ -289,7 +289,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_eq_equal) {
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
 
-BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_less_b) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_inplace_addition_operator_test_b) {
     polynomial_dfs<typename FieldType::value_type> a = {
         7,
         {0x37_cppui253, 0x6C17ABF513DFFC886A7F49F970801792C825CFDD829870DC60E8DA51F53633_cppui253,
@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_less_b) {
     BOOST_CHECK_EQUAL(c_res.degree(), a.degree());
 }
 
-BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_less_a) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_inplace_addition_operator_test_а) {
     polynomial_dfs<typename FieldType::value_type> a = {
         2,
         {0x17_cppui253, 0x1a7f5666b62090e72c4090007620900000002fffffffffffe_cppui253, 0x11_cppui253,
