@@ -348,6 +348,7 @@ namespace nil {
                 void resize(size_type _sz) {
                     // BOOST_ASSERT_MSG(_sz >= _d, "Can't restore polynomial in the future");
 
+                    if (this->size() == _sz) return;
                     if (this->size() == 1){
                         this->val.resize(_sz, this->val[0]);
                     } else {
