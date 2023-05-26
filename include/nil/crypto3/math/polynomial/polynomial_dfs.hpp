@@ -627,14 +627,14 @@ namespace nil {
                     return tmp;
                 }
 
-                polynomial_dfs pow(const FieldValueType& alpha) {
-                    if (alpha == 1) {
+                polynomial_dfs pow(int power) {
+                    if (power == 1) {
                         return *this;
                     }
-                    FieldValueType half = alpha / 2;
+                    int half = power / 2;
                     polynomial_dfs r = this->pow(half);
                     r *= r;
-                    if (alpha != half + half) {
+                    if (power != half + half) {
                         r *= *this;
                     }
                     return r;
