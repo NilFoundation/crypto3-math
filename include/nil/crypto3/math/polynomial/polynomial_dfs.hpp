@@ -627,11 +627,11 @@ namespace nil {
                     return tmp;
                 }
 
-                polynomial_dfs pow(int power) {
+                polynomial_dfs pow(size_t power) {
                     if (power == 1) {
                         return *this;
                     }
-                    int half = power / 2;
+                    size_t half = power / 2;
                     polynomial_dfs r = this->pow(half);
                     r *= r;
                     if (power != half + half) {
