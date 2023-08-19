@@ -293,6 +293,7 @@ BOOST_AUTO_TEST_CASE(polynomial_division) {
 
     polynomial<typename FieldType::value_type> a = {5, 0, 0, 13, 0, 1};
     polynomial<typename FieldType::value_type> b = {13, 2, 1};
+    polynomial<typename FieldType::value_type> one = {1};
 
     polynomial<typename FieldType::value_type> Q(1, FieldType::value_type::zero());
     polynomial<typename FieldType::value_type> R(1, FieldType::value_type::zero());
@@ -309,6 +310,21 @@ BOOST_AUTO_TEST_CASE(polynomial_division) {
     for (std::size_t i = 0; i < R.size(); i++) {
         BOOST_CHECK_EQUAL(R_ans[i].data, R[i].data);
     }
+}
+
+BOOST_AUTO_TEST_CASE(polynomial_division_on_one_polynomial){
+    polynomial<typename FieldType::value_type> c = {0,1};
+    polynomial<typename FieldType::value_type> d = {1};
+    polynomial<typename FieldType::value_type> q = c/d;
+    BOOST_CHECK_EQUAL(c.size(), q.size());
+    for (std::size_t i = 0; i < q.size(); i++) {
+        BOOST_CHECK_EQUAL(c[i].data, q[i].data);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(polynomial_division_on_one_polynomial2){
+    polynomial<typename FieldType::value_type> c = {0,1};
+    c = c / polynomial<typename FieldType::value_type>({1});
 }
 
 BOOST_AUTO_TEST_CASE(polynomial_division_horner_binomial) {
