@@ -407,6 +407,11 @@ namespace nil {
                     return result;
                 }
 
+                polynomial& operator+=(const polynomial& other) {
+                    addition(*this, *this, other);
+                    return *this;
+                }
+
                 polynomial operator-() const {
                     polynomial result(this->size());
                     std::transform(this->begin(), this->end(), result.begin(), std::negate<FieldValueType>());
@@ -423,6 +428,11 @@ namespace nil {
                     return result;
                 }
 
+                polynomial& operator-=(const polynomial& other) {
+                    subtraction(*this, *this, other);
+                    return *this;
+                }
+
                 /**
                  * Perform the multiplication of two polynomials, polynomial A * polynomial B, and stores result in
                  * polynomial C.
@@ -433,15 +443,27 @@ namespace nil {
                     return result;
                 }
 
+                polynomial& operator*=(const polynomial& other) {
+                    multiplication(*this, *this, other);
+                    return *this;
+                }
                 /**
                  * Perform the standard Euclidean Division algorithm.
                  * Input: Polynomial A, Polynomial B, where A / B
                  * Output: Polynomial Q, such that A = (Q * B) + R.
                  */
                 polynomial operator/(const polynomial& other) const {
-                    polynomial r,q;
+                    polynomial r, q;
                     division(q, r, *this, other);
                     return q;
+                }
+
+                polynomial& operator/=(const polynomial& other) {
+                    polynomial r, q;
+                    // Can't pass *this to the following function call instead of q.
+                    division(q, r, *this, other);
+                    *this = q;
+                    return *this;
                 }
 
                 /**
@@ -453,6 +475,14 @@ namespace nil {
                     polynomial r, q;
                     division(q, r, *this, other);
                     return r;
+                }
+
+                polynomial& operator%=(const polynomial& other) {
+                    polynomial q, r;
+                    // Can't pass *this to the following function call instead of r.
+                    division(q, r, *this, other);
+                    *this = r;
+                    return *this;
                 }
             };
 
@@ -519,6 +549,26 @@ namespace nil {
 
                 return polynomial<FieldValueType>(A) / B;
             }
+
+            // Used in the unit tests, so we can use BOOST_CHECK_EQUALS, and see
+            // the values of polynomials, when the check fails.
+            template<typename FieldValueType, typename Allocator = std::allocator<FieldValueType>,
+                     typename = typename std::enable_if<detail::is_field_element<FieldValueType>::value>::type>
+            std::ostream& operator<<(std::ostream& os,
+                                     const polynomial<FieldValueType, Allocator>& poly) {
+                if (poly.degree() == 0) {
+                    // If all it contains is a constant, print the constant, so it's more readable.
+                    os << *poly.begin();
+                } else {
+                    os << "[Polynomial, size " << poly.size() << " values ";
+                    for( auto it = poly.begin(); it != poly.end(); it++ ){
+                        os << "0x" << std::hex << it->data << ", ";
+                    }
+                    os << "]";
+                }
+                return os;
+            }
+
         }    // namespace math
     }        // namespace crypto3
 }    // namespace nil
