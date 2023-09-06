@@ -26,6 +26,7 @@
 #define CRYPTO3_THREAD_POOL_HPP
 
 #include <boost/asio/thread_pool.hpp>
+#include <boost/asio/post.hpp>
 
 #include <condition_variable>
 #include <functional>
@@ -37,7 +38,7 @@ namespace nil {
     namespace crypto3 {
 
         template<class ReturnType>
-        void wait_for_all(const std::vector<future<ReturnType>>& futures) {
+        void wait_for_all(const std::vector<std::future<ReturnType>>& futures) {
             for (auto& f: futures) {
                 f.wait();
             }
@@ -46,18 +47,21 @@ namespace nil {
         class ThreadPool {
         public:
 
-            static unique_ptr<ThreadPool> pool;
+            static std::unique_ptr<ThreadPool> instance;
 
             static void start(std::size_t pool_size) {
-                pool = new ThreadPool(pool_size);
+                instance.reset(new ThreadPool(pool_size));
             }
 
             static ThreadPool& get_instance() {
-                if (!pool) {
+                if (!instance) {
                     throw std::logic_error("Getting instance of a thread pool before it was started.");
                 }
-                return *pool; 
+                return *instance; 
             }
+
+            ThreadPool(const ThreadPool& obj)= delete;
+            ThreadPool& operator=(const ThreadPool& obj)= delete;
 
             template<class ReturnType>
             inline std::future<ReturnType> post(std::function<ReturnType()> task) {
@@ -74,18 +78,18 @@ namespace nil {
 
             // Divides work into a ranges and makes calls to func in parallel.
             template<class ReturnType>
-            std::vector<future<ReturnType>> block_execution(
+            std::vector<std::future<ReturnType>> block_execution(
                     std::size_t elements_count,
                     std::function<ReturnType(std::size_t begin, std::size_t end)> func) {
 
-                std::vector<future<ReturnType>> fut;
+                std::vector<std::future<ReturnType>> fut;
                 std::size_t cpu_usage = std::min(elements_count, pool_size);
                 std::size_t element_per_cpu = elements_count / (cpu_usage - 1);
 
                 for (int i = 0; i < cpu_usage; i++) {
                     auto begin = element_per_cpu * i;
                     auto end = (i == cpu_usage - 1) ? elements_count : element_per_cpu * (i + 1);
-                    fut.emplace_back(post([begin, end, func]() {
+                    fut.emplace_back(post<ReturnType>([begin, end, func]() {
                         return func(begin, end);
                     }));
                 }

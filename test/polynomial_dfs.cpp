@@ -35,10 +35,13 @@
 
 #include <nil/crypto3/algebra/fields/arithmetic_params/bls12.hpp>
 
+#include <nil/crypto3/algebra/random_element.hpp>
+
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 #include <nil/crypto3/math/polynomial/polynomial_dfs.hpp>
 #include <nil/crypto3/math/polynomial/shift.hpp>
+#include <nil/crypto3/math/multithreading/thread_pool.hpp>
 
 using namespace nil::crypto3::algebra;
 using namespace nil::crypto3::math;
@@ -1307,6 +1310,8 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_perf_test) {
 }
 
 BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test) {
+    nil::crypto3::ThreadPool::start(16);
+
     std::vector<typename FieldType::value_type> values;
     size_t size = 131072 * 16;
     for (int i = 0; i < size; i++) {
@@ -1316,7 +1321,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test) {
     polynomial_dfs<typename FieldType::value_type> poly = {
         size - 1, values};
 
-    poly.resize(2 * size).get();
+    poly.resize(2 * size);
     for (int i = 0; i < 1000; ++i) {
         BOOST_CHECK(poly != poly * poly);
     }
@@ -1332,7 +1337,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
     for (int i = 0; i < 10; ++i) {
         polynomial_dfs<typename FieldType::value_type> poly = {
             size - 1, values};
-        poly.resize(8 * size).get();
+        poly.resize(8 * size);
         BOOST_CHECK(poly.size() == 8 * size);
     }
 }
