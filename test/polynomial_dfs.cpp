@@ -1293,4 +1293,48 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_zero_one_test) {
     BOOST_CHECK((small_poly - one * small_poly).is_zero());
 }
 
+BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_perf_test) {
+    std::vector<typename FieldType::value_type> values;
+    for (int i = 0; i < 131072; i++) {
+        values.push_back(nil::crypto3::algebra::random_element<FieldType>());
+    }
+
+    polynomial_dfs<typename FieldType::value_type> poly = {
+        131072, values};
+    for (int i = 0; i < 5000; ++i) {
+        BOOST_CHECK(poly != poly + poly);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test) {
+    std::vector<typename FieldType::value_type> values;
+    size_t size = 131072 * 16;
+    for (int i = 0; i < size; i++) {
+        values.push_back(nil::crypto3::algebra::random_element<FieldType>());
+    }
+
+    polynomial_dfs<typename FieldType::value_type> poly = {
+        size - 1, values};
+
+    poly.resize(2 * size).get();
+    for (int i = 0; i < 1000; ++i) {
+        BOOST_CHECK(poly != poly * poly);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
+    std::vector<typename FieldType::value_type> values;
+    size_t size = 131072 * 4;
+    for (int i = 0; i < size; i++) {
+        values.push_back(nil::crypto3::algebra::random_element<FieldType>());
+    }
+
+    for (int i = 0; i < 10; ++i) {
+        polynomial_dfs<typename FieldType::value_type> poly = {
+            size - 1, values};
+        poly.resize(8 * size).get();
+        BOOST_CHECK(poly.size() == 8 * size);
+    }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
