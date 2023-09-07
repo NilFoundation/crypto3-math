@@ -28,7 +28,6 @@
 #include <boost/asio/thread_pool.hpp>
 #include <boost/asio/post.hpp>
 
-#include <condition_variable>
 #include <functional>
 #include <future>
 #include <memory>
@@ -84,7 +83,11 @@ namespace nil {
 
                 std::vector<std::future<ReturnType>> fut;
                 std::size_t cpu_usage = std::min(elements_count, pool_size);
-                std::size_t element_per_cpu = elements_count / (cpu_usage - 1);
+                std::size_t element_per_cpu = elements_count / cpu_usage;
+
+std::cout << "cpu_usage = " << cpu_usage << std::endl;
+std::cout << "pool_size = " << pool_size << std::endl;
+std::cout << "element_per_cpu = " << element_per_cpu << std::endl;
 
                 for (int i = 0; i < cpu_usage; i++) {
                     auto begin = element_per_cpu * i;
@@ -98,12 +101,15 @@ namespace nil {
 
         private:
             inline ThreadPool(std::size_t pool_size)
-                : pool(pool_size) {
+                : pool(pool_size)
+                , pool_size(pool_size){
             }
 
             boost::asio::thread_pool pool;
             std::size_t pool_size;
         };
+
+        std::unique_ptr<ThreadPool> ThreadPool::instance = nullptr;
 
     }        // namespace crypto3
 }    // namespace nil

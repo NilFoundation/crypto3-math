@@ -437,10 +437,25 @@ namespace nil {
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
-                        std::transform(tmp.begin(), tmp.end(), result.begin(), result.begin(),
-                                       std::plus<FieldValueType>());
+                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                            result.size(),
+                            [&result, &tmp](std::size_t begin, std::size_t end) {
+std::cout << "Adding range " << begin << " " << end << std::endl;
+                                for (std::size_t i = begin; i < end; i++) {
+                                    result[i] += tmp[i];
+                                }
+                            }));
                         return result;
                     }
+
+                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        result.size(),
+                        [&result, &other](std::size_t begin, std::size_t end) {
+std::cout << "Adding range " << begin << " " << end << std::endl;
+                            for (std::size_t i = begin; i < end; i++) {
+                                result[i] += other[i];
+                            }
+                        }));
                     std::transform(other.begin(), other.end(), result.begin(), result.begin(),
                                    std::plus<FieldValueType>());
                     return result;
@@ -459,10 +474,26 @@ namespace nil {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
 
-                        std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(), std::plus<FieldValueType>());
+                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                            this->size(),
+                            [&result, &tmp](std::size_t begin, std::size_t end) {
+std::cout << "Adding range " << begin << " " << end << std::endl;
+                                for (std::size_t i = begin; i < end; i++) {
+                                    (*this)[i] += tmp[i];
+                                }
+                            }));
                         return *this;
                     }
-                    std::transform(other.begin(), other.end(), this->begin(), this->begin(), std::plus<FieldValueType>());
+
+                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        this->size(),
+                        [&result, &tmp](std::size_t begin, std::size_t end) {
+std::cout << "Adding range " << begin << " " << end << std::endl;
+                            for (std::size_t i = begin; i < end; i++) {
+                                (*this)[i] += other[i];
+                            }
+                        }));
+
                     return *this;
                 }
 
@@ -560,7 +591,7 @@ namespace nil {
                             result.size(),
                             [&result, &tmp](std::size_t begin, std::size_t end) {
                                 for (std::size_t i = begin; i < end; i++) {
-                                    result[i] = result[i] * tmp[i];
+                                    result[i] *= tmp[i];
                                 }
                             }));
 
@@ -569,8 +600,9 @@ namespace nil {
                     wait_for_all(ThreadPool::get_instance().block_execution<void>(
                         result.size(),
                         [&result, &other](std::size_t begin, std::size_t end) {
+std::cout << "Multiplying range " << begin << " " << end << std::endl;
                             for (std::size_t i = begin; i < end; i++) {
-                                result[i] = result[i] * other[i];
+                                result[i] *= other[i];
                             }
                         }));
 

@@ -1321,15 +1321,20 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test) {
     polynomial_dfs<typename FieldType::value_type> poly = {
         size - 1, values};
 
+    polynomial_dfs<typename FieldType::value_type> poly2 = {
+        size - 1, values};
+
     poly.resize(2 * size);
-    for (int i = 0; i < 1000; ++i) {
-        BOOST_CHECK(poly != poly * poly);
+
+    for (int i = 0; i < 100; ++i) {
+        poly2 = poly2 + poly * poly;
     }
+    BOOST_CHECK(poly2 != poly);
 }
 
 BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
     std::vector<typename FieldType::value_type> values;
-    size_t size = 131072 * 4;
+    size_t size = 131072 * 16;
     for (int i = 0; i < size; i++) {
         values.push_back(nil::crypto3::algebra::random_element<FieldType>());
     }
@@ -1339,6 +1344,27 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
             size - 1, values};
         poly.resize(8 * size);
         BOOST_CHECK(poly.size() == 8 * size);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(vector_mult_test) {
+    nil::crypto3::ThreadPool::start(8);
+
+    std::vector<int> result(100000000);
+    std::vector<int> other(result.size());
+    for (int i = 0; i < result.size(); ++i) {
+        result[i] = rand();
+        other[i] = rand();
+    }
+
+    for (int i = 0; i < 1000; ++i) {
+        nil::crypto3::wait_for_all(nil::crypto3::ThreadPool::get_instance().block_execution<void>(
+            result.size(),
+            [&result, &other](std::size_t begin, std::size_t end) {
+                for (std::size_t i = begin; i < end; i++) {
+                    result[i] *= other[i];
+                }
+            }));
     }
 }
 
