@@ -85,10 +85,6 @@ namespace nil {
                 std::size_t cpu_usage = std::min(elements_count, pool_size);
                 std::size_t element_per_cpu = elements_count / cpu_usage;
 
-std::cout << "cpu_usage = " << cpu_usage << std::endl;
-std::cout << "pool_size = " << pool_size << std::endl;
-std::cout << "element_per_cpu = " << element_per_cpu << std::endl;
-
                 for (int i = 0; i < cpu_usage; i++) {
                     auto begin = element_per_cpu * i;
                     auto end = (i == cpu_usage - 1) ? elements_count : element_per_cpu * (i + 1);

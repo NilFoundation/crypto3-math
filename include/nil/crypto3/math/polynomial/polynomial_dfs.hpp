@@ -440,7 +440,6 @@ namespace nil {
                         wait_for_all(ThreadPool::get_instance().block_execution<void>(
                             result.size(),
                             [&result, &tmp](std::size_t begin, std::size_t end) {
-std::cout << "Adding range " << begin << " " << end << std::endl;
                                 for (std::size_t i = begin; i < end; i++) {
                                     result[i] += tmp[i];
                                 }
@@ -451,7 +450,6 @@ std::cout << "Adding range " << begin << " " << end << std::endl;
                     wait_for_all(ThreadPool::get_instance().block_execution<void>(
                         result.size(),
                         [&result, &other](std::size_t begin, std::size_t end) {
-std::cout << "Adding range " << begin << " " << end << std::endl;
                             for (std::size_t i = begin; i < end; i++) {
                                 result[i] += other[i];
                             }
@@ -476,8 +474,7 @@ std::cout << "Adding range " << begin << " " << end << std::endl;
 
                         wait_for_all(ThreadPool::get_instance().block_execution<void>(
                             this->size(),
-                            [&result, &tmp](std::size_t begin, std::size_t end) {
-std::cout << "Adding range " << begin << " " << end << std::endl;
+                            [this, &tmp](std::size_t begin, std::size_t end) {
                                 for (std::size_t i = begin; i < end; i++) {
                                     (*this)[i] += tmp[i];
                                 }
@@ -487,8 +484,7 @@ std::cout << "Adding range " << begin << " " << end << std::endl;
 
                     wait_for_all(ThreadPool::get_instance().block_execution<void>(
                         this->size(),
-                        [&result, &tmp](std::size_t begin, std::size_t end) {
-std::cout << "Adding range " << begin << " " << end << std::endl;
+                        [this, &other](std::size_t begin, std::size_t end) {
                             for (std::size_t i = begin; i < end; i++) {
                                 (*this)[i] += other[i];
                             }
@@ -600,10 +596,11 @@ std::cout << "Adding range " << begin << " " << end << std::endl;
                     wait_for_all(ThreadPool::get_instance().block_execution<void>(
                         result.size(),
                         [&result, &other](std::size_t begin, std::size_t end) {
-std::cout << "Multiplying range " << begin << " " << end << std::endl;
+//std::cout << "Multiplying range " << begin << " " << end << std::endl;
                             for (std::size_t i = begin; i < end; i++) {
                                 result[i] *= other[i];
                             }
+//std::cout << "Done Multiplying range " << begin << " " << end << std::endl;
                         }));
 
                     return result;
@@ -629,10 +626,23 @@ std::cout << "Multiplying range " << begin << " " << end << std::endl;
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
 
-                        std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(), std::multiplies<FieldValueType>());
+                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                            this->size(),
+                            [this, &tmp](std::size_t begin, std::size_t end) {
+                                for (std::size_t i = begin; i < end; i++) {
+                                    (*this)[i] *= tmp[i];
+                                }
+                            }));
                         return *this;
                     }
-                    std::transform(this->begin(), this->end(), other.begin(), this->begin(), std::multiplies<FieldValueType>());
+                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        this->size(),
+                        [this, &other](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                (*this)[i] *= other[i];
+                            }
+                        }));
+
                     return *this;
                 }
                 
