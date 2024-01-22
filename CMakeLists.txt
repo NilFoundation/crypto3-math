@@ -14,6 +14,13 @@ cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0057 NEW)
 cmake_policy(SET CMP0076 NEW)
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    add_compile_options(-fcoroutines)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-stdlib=libc++)  # for Clang, you might need -stdlib=libc++
+endif()
+
+
 list(APPEND CMAKE_MODULE_PATH
      "${CMAKE_CURRENT_LIST_DIR}/cmake"
      "${CMAKE_CURRENT_LIST_DIR}/cmake/packages"

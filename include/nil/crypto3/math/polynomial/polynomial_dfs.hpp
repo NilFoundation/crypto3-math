@@ -34,6 +34,7 @@
 
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
+#include <nil/crypto3/math/cobalt_helpers/thread_pool.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -583,10 +584,23 @@ namespace nil {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
 
-                        std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(), std::multiplies<FieldValueType>());
+                        ThreadPool::get_instance().block_execution(
+                            this->size(),
+                            [this, &tmp](std::size_t begin, std::size_t end) {
+                                for (std::size_t i = begin; i < end; i++) {
+                                    (*this)[i] *= tmp[i];
+                                }
+                            }).get();
                         return *this;
                     }
-                    std::transform(this->begin(), this->end(), other.begin(), this->begin(), std::multiplies<FieldValueType>());
+
+                    ThreadPool::get_instance().block_execution(
+                        this->size(),
+                        [this, &other](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                (*this)[i] *= other[i];
+                            }
+                        }).get();
                     return *this;
                 }
                 

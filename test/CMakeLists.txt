@@ -40,7 +40,7 @@ macro(define_math_test name)
 
                                ${Boost_INCLUDE_DIRS})
 
-    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 17)
+    set_target_properties(${test_name} PROPERTIES CXX_STANDARD 20)
 
     get_target_property(target_type Boost::unit_test_framework TYPE)
     if(target_type STREQUAL "SHARED_LIB")

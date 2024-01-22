@@ -25,7 +25,12 @@
 #ifndef CRYPTO3_THREAD_POOL_HPP
 #define CRYPTO3_THREAD_POOL_HPP
 
-#include <boost/cobalt.hpp>
+#include <thread>
+
+#include <boost/cobalt/promise.hpp>
+#include <boost/cobalt/task.hpp>
+#include <boost/cobalt/this_thread.hpp>
+#include <boost/cobalt/join.hpp>
 
 #include <boost/asio/as_tuple.hpp>
 #include <boost/asio/redirect_error.hpp>
@@ -42,50 +47,92 @@ namespace nil {
 
             static std::unique_ptr<ThreadPool> instance;
 
-            static void start(std::size_t pool_size) {
+            static void start(std::size_t pool_size = std::thread::hardware_concurrency()) {
                 instance.reset(new ThreadPool(pool_size));
             }
 
             static ThreadPool& get_instance() {
                 if (!instance) {
-                    throw std::logic_error("Getting instance of a thread pool before it was started.");
+                    start();
                 }
                 return *instance; 
             }
  
-co_await cobalt::join(tasks);
+            template<class ReturnType>
+            boost::cobalt::task<void> run_on_executor(
+                std::size_t begin, std::size_t end,
+                std::function<ReturnType(std::size_t begin, std::size_t end)> func,
+                boost::asio::executor_arg_t = {}, boost::cobalt::executor = boost::cobalt::this_thread::get_executor()) {
+                co_return func(begin, end);
+            }           
 
             // Divides work into a ranges and makes calls to func in parallel.
+            // We assume that func is free to submit tasks to the same thread pool.
             template<class ReturnType>
-            std::vector<cobalt::task<ReturnType>> block_execution(
+            boost::cobalt::task<std::vector<ReturnType>> block_execution(
                     std::size_t elements_count,
                     std::function<ReturnType(std::size_t begin, std::size_t end)> func) {
 
-                auto exec = co_await cobalt::this_coro::executor;
+                auto exec = co_await boost::cobalt::this_coro::executor;
 
-                std::vector<cobalt::task<ReturnType>> tasks;
+                std::vector<ReturnType> results;
                 std::size_t cpu_usage = std::min(elements_count, thread_count);
                 std::size_t element_per_cpu = elements_count / cpu_usage;
+
+                std::vector<boost::cobalt::task<void>> tasks;
 
                 for (int i = 0; i < cpu_usage; i++) {
                     auto begin = element_per_cpu * i;
                     auto end = (i == cpu_usage - 1) ? elements_count : element_per_cpu * (i + 1);
-                    tasks.emplace_back(spawn(ctx, [begin, end, func]() {
-                        co_return func(begin, end);
-                    }, asio::use_future));
+
+                    boost::cobalt::task<ReturnType> task = run_on_executor<ReturnType>(
+                        begin, end, func, boost::asio::executor_arg, tp.get_executor());
+                    tasks.emplace_back(std::move(task));
                 }
-                return tasks;
+                co_return boost::cobalt::join(tasks);
             }
+
+            boost::cobalt::task<void> run_on_executor(
+                std::size_t begin, std::size_t end,
+                std::function<void(std::size_t begin, std::size_t end)> func,
+                boost::asio::executor_arg_t = {}, boost::cobalt::executor = boost::cobalt::this_thread::get_executor()) {
+
+                func(begin, end);
+                co_return;
+            }
+
+            boost::cobalt::promise<void> block_execution(
+                    std::size_t elements_count,
+                    std::function<void(std::size_t begin, std::size_t end)> func) {
+
+                auto exec = co_await boost::cobalt::this_coro::executor;
+
+                std::size_t cpu_usage = std::min(elements_count, thread_count);
+                std::size_t element_per_cpu = elements_count / cpu_usage;
+
+                std::vector<boost::cobalt::task<void>> tasks;
+                for (int i = 0; i < cpu_usage; i++) {
+                    auto begin = element_per_cpu * i;
+                    auto end = (i == cpu_usage - 1) ? elements_count : element_per_cpu * (i + 1);
+
+                    boost::cobalt::task<void> task = run_on_executor(
+                        begin, end, func, boost::asio::executor_arg, tp.get_executor());
+                    tasks.emplace_back(std::move(task));
+                }
+                co_await boost::cobalt::join(tasks);
+            }
+
+	        ~ThreadPool() {
+		        tp.join(); 
+	        }
 
         private: 
             ThreadPool(std::size_t thread_count)
                 : thread_count(thread_count)
                 , tp(thread_count)
             {
-                ctx.run();
             }
 
-            asio::io_context ctx{BOOST_ASIO_CONCURRENCY_HINT_1};
             const std::size_t thread_count;
             boost::asio::thread_pool tp;
 
