@@ -664,18 +664,23 @@ namespace nil {
                     detail::basic_radix2_fft<FieldType>(val, omega);
                 }
 
-                std::vector<FieldValueType> coefficients() const {
+                std::vector<FieldValueType> coefficients(
+                        std::shared_ptr<evaluation_domain<typename value_type::field_type>> domain = nullptr) const {
                     typedef typename value_type::field_type FieldType;
                     value_type omega = unity_root<FieldType>(this->size());
                     std::vector<FieldValueType> tmp(this->begin(), this->end());
 
-                    detail::basic_radix2_fft<FieldType>(tmp, omega.inversed());
+                    if (domain == nullptr) {
+                        detail::basic_radix2_fft<FieldType>(tmp, omega.inversed());
+                        const value_type sconst = value_type(this->size()).inversed();
+                        std::transform(tmp.begin(),
+                                    tmp.end(),
+                                    tmp.begin(),
+                                    std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
+                    } else {
+                        domain->inverse_fft(tmp);
+                    }
 
-                    const value_type sconst = value_type(this->size()).inversed();
-                    std::transform(tmp.begin(),
-                                   tmp.end(),
-                                   tmp.begin(),
-                                   std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
                     size_t r_size = tmp.size();
                     while (r_size > 1 && tmp[r_size - 1] == FieldValueType::zero()) {
                         --r_size;
