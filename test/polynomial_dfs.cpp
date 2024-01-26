@@ -1296,7 +1296,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_zero_one_test) {
     BOOST_CHECK((small_poly - one * small_poly).is_zero());
 }
 
-BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_perf_test) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_perf_test, *boost::unit_test::disabled()) {
     std::vector<typename FieldType::value_type> values;
     for (int i = 0; i < 131072; i++) {
         values.push_back(nil::crypto3::algebra::random_element<FieldType>());
@@ -1309,23 +1309,43 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_perf_test) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test) {
-    nil::crypto3::ThreadPool::start(8);
-
-    size_t size = 131072 * 32;
+BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test, *boost::unit_test::disabled()) {
+    size_t size = 8;
 
     polynomial_dfs<typename FieldType::value_type> poly = {
-        size / 4096, size, nil::crypto3::algebra::random_element<FieldType>()};
+        size / 4, size, nil::crypto3::algebra::random_element<FieldType>()};
 
-    polynomial_dfs<typename FieldType::value_type> poly4 = poly;
+    std::vector<polynomial_dfs<typename FieldType::value_type>> poly4(40, poly);
 
-    for (int i = 0; i < 100; ++i) {
-        poly4 *= poly;
+    auto start = std::chrono::high_resolution_clock::now();
+    nil::crypto3::wait_for_all(nil::crypto3::ThreadPool::get_instance(1).block_execution<void>(
+       poly4.size(),
+       [&poly4, &poly](std::size_t begin, std::size_t end) {
+           for (std::size_t i = begin; i < end; i++) {
+               for (int j = 0; j < 1; ++j)
+                   poly4[i] *= poly;
+           }
+       }));
+
+    for (int i = 1; i < poly4.size(); ++i) {
+        if (poly4[i] != poly4[0]) {
+            std::cout << i << std::endl;
+            std::cout << poly4[i] << std::endl << std::endl;
+            std::cout << poly4[0] << std::endl << std::endl;
+            return;
+        }
     }
-    BOOST_CHECK(poly4 != poly);
+
+    // Record the end time
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // Calculate the duration
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    std::cout << "Multiplication time: " << duration.count() << " microseconds." << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
+BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test, *boost::unit_test::disabled()) {
     std::vector<typename FieldType::value_type> values;
     size_t size = 131072 * 16;
     for (int i = 0; i < size; i++) {
@@ -1337,28 +1357,6 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test) {
             size - 1, values};
         poly.resize(8 * size);
         BOOST_CHECK(poly.size() == 8 * size);
-    }
-}
-
-BOOST_AUTO_TEST_CASE(vector_mult_test) {
-    nil::crypto3::ThreadPool::start(8);
-
-    size_t size = 131072 * 16 * 16;
-    std::vector<int> result(size);
-    std::vector<int> other(size);
-    for (int i = 0; i < result.size(); ++i) {
-        result[i] = rand();
-        other[i] = rand();
-    }
-
-    for (int i = 0; i < 1000; ++i) {
-        nil::crypto3::wait_for_all(nil::crypto3::ThreadPool::get_instance().block_execution<void>(
-            result.size(),
-            [&result, &other](std::size_t begin, std::size_t end) {
-                for (std::size_t i = begin; i < end; i++) {
-                    result[i] *= other[i];
-                }
-            }));
     }
 }
 

@@ -437,7 +437,7 @@ namespace nil {
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
-                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
                             result.size(),
                             [&result, &tmp](std::size_t begin, std::size_t end) {
                                 for (std::size_t i = begin; i < end; i++) {
@@ -447,7 +447,7 @@ namespace nil {
                         return result;
                     }
 
-                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
                         result.size(),
                         [&result, &other](std::size_t begin, std::size_t end) {
                             for (std::size_t i = begin; i < end; i++) {
@@ -472,7 +472,7 @@ namespace nil {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
 
-                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
                             this->size(),
                             [this, &tmp](std::size_t begin, std::size_t end) {
                                 for (std::size_t i = begin; i < end; i++) {
@@ -482,7 +482,7 @@ namespace nil {
                         return *this;
                     }
 
-                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
                         this->size(),
                         [this, &other](std::size_t begin, std::size_t end) {
                             for (std::size_t i = begin; i < end; i++) {
@@ -583,7 +583,7 @@ namespace nil {
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
-                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
                             result.size(),
                             [&result, &tmp](std::size_t begin, std::size_t end) {
                                 for (std::size_t i = begin; i < end; i++) {
@@ -593,14 +593,12 @@ namespace nil {
 
                         return result;
                     }
-                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
                         result.size(),
                         [&result, &other](std::size_t begin, std::size_t end) {
-//std::cout << "Multiplying range " << begin << " " << end << std::endl;
                             for (std::size_t i = begin; i < end; i++) {
                                 result[i] *= other[i];
                             }
-//std::cout << "Done Multiplying range " << begin << " " << end << std::endl;
                         }));
 
                     return result;
@@ -626,7 +624,7 @@ namespace nil {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
 
-                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
                             this->size(),
                             [this, &tmp](std::size_t begin, std::size_t end) {
                                 for (std::size_t i = begin; i < end; i++) {
@@ -635,7 +633,7 @@ namespace nil {
                             }));
                         return *this;
                     }
-                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
                         this->size(),
                         [this, &other](std::size_t begin, std::size_t end) {
                             for (std::size_t i = begin; i < end; i++) {

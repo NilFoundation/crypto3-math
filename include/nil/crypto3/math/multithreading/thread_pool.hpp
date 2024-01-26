@@ -30,6 +30,8 @@
 
 #include <functional>
 #include <future>
+#include <thread>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 
@@ -46,17 +48,13 @@ namespace nil {
         class ThreadPool {
         public:
 
-            static std::unique_ptr<ThreadPool> instance;
+            static ThreadPool& get_instance(std::size_t pool_number, std::size_t pool_size = std::thread::hardware_concurrency()) {
+                static std::map<std::size_t, std::unique_ptr<ThreadPool>> instances;
 
-            static void start(std::size_t pool_size) {
-                instance.reset(new ThreadPool(pool_size));
-            }
-
-            static ThreadPool& get_instance() {
-                if (!instance) {
-                    throw std::logic_error("Getting instance of a thread pool before it was started.");
+                if (instances.find(pool_number) == instances.end() || !instances[pool_number]) {
+                    instances[pool_number].reset(new ThreadPool(pool_number, pool_size));
                 }
-                return *instance; 
+                return *instances[pool_number]; 
             }
 
             ThreadPool(const ThreadPool& obj)= delete;
@@ -85,6 +83,13 @@ namespace nil {
                 std::size_t cpu_usage = std::min(elements_count, pool_size);
                 std::size_t element_per_cpu = elements_count / cpu_usage;
 
+                // Pool #0 will take care of the lowest level of operations, like polynomial operations.
+                // We want the minimal size of element_per_cpu to be 65536, otherwise the cores are not loaded.
+                if (pool_number == 0 && element_per_cpu < 65536) {
+                    cpu_usage = elements_count / 65536 + elements_count % 65536 ? 1 : 0;
+                    element_per_cpu = elements_count / cpu_usage;
+                }
+
                 for (int i = 0; i < cpu_usage; i++) {
                     auto begin = element_per_cpu * i;
                     auto end = (i == cpu_usage - 1) ? elements_count : element_per_cpu * (i + 1);
@@ -96,16 +101,18 @@ namespace nil {
             }
 
         private:
-            inline ThreadPool(std::size_t pool_size)
+            inline ThreadPool(std::size_t pool_number, std::size_t pool_size)
                 : pool(pool_size)
-                , pool_size(pool_size){
+                , pool_size(pool_size)
+                , pool_number(pool_number) {
             }
 
             boost::asio::thread_pool pool;
             std::size_t pool_size;
-        };
 
-        std::unique_ptr<ThreadPool> ThreadPool::instance = nullptr;
+            // Each pool with know it's number.
+            std::size_t pool_number;
+        };
 
     }        // namespace crypto3
 }    // namespace nil
