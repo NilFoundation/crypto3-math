@@ -31,10 +31,16 @@
 #include <vector>
 #include <ostream>
 #include <iterator>
+#include <thread>
 
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/multithreading/thread_pool.hpp>
+
+#include <boost/asio/awaitable.hpp>
+#include <boost/asio/spawn.hpp>
+#include <boost/asio/use_awaitable.hpp>
+
 
 namespace nil {
     namespace crypto3 {
@@ -428,7 +434,7 @@ namespace nil {
                  * Computes the standard polynomial addition, polynomial A + polynomial B,
                  * and stores result in polynomial C.
                  */
-                polynomial_dfs operator+(const polynomial_dfs& other) const {
+                boost::asio::awaitable<polynomial_dfs> operator+(const polynomial_dfs& other) const {
                     polynomial_dfs result = *this;
                     if (other.size() > this->size()) {
                         result.resize(other.size());
@@ -437,33 +443,31 @@ namespace nil {
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
-                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        co_await ThreadPool::get_instance().block_execution(
                             result.size(),
                             [&result, &tmp](std::size_t begin, std::size_t end) {
                                 for (std::size_t i = begin; i < end; i++) {
                                     result[i] += tmp[i];
                                 }
-                            }));
-                        return result;
+                            });
+                        co_return result;
                     }
 
-                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                    co_await ThreadPool::get_instance().block_execution(
                         result.size(),
                         [&result, &other](std::size_t begin, std::size_t end) {
                             for (std::size_t i = begin; i < end; i++) {
                                 result[i] += other[i];
                             }
-                        }));
-                    std::transform(other.begin(), other.end(), result.begin(), result.begin(),
-                                   std::plus<FieldValueType>());
-                    return result;
+                        });
+                    co_return result;
                 }
 
                 /**
                  * Computes the standard polynomial addition, polynomial A + polynomial B, 
                  * and stores result in polynomial A.
                  */
-                polynomial_dfs& operator+=(const polynomial_dfs& other) {
+                boost::asio::awaitable<void> operator+=(const polynomial_dfs& other) {
                     if (other.size() > this->size()) {
                         this->resize(other.size());
                     }
@@ -472,25 +476,25 @@ namespace nil {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
 
-                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        co_await ThreadPool::get_instance().block_execution(
                             this->size(),
                             [this, &tmp](std::size_t begin, std::size_t end) {
                                 for (std::size_t i = begin; i < end; i++) {
                                     (*this)[i] += tmp[i];
                                 }
-                            }));
-                        return *this;
+                            });
+                        co_return;
                     }
 
-                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                    co_await ThreadPool::get_instance().block_execution(
                         this->size(),
                         [this, &other](std::size_t begin, std::size_t end) {
                             for (std::size_t i = begin; i < end; i++) {
                                 (*this)[i] += other[i];
                             }
-                        }));
+                        });
 
-                    return *this;
+                    co_return ;
                 }
 
                 /**
@@ -567,7 +571,7 @@ namespace nil {
                  * Perform the multiplication of two polynomials, polynomial A * polynomial B, 
                  * and stores result in polynomial C.
                  */
-                polynomial_dfs operator*(const polynomial_dfs& other) const {
+                boost::asio::awaitable<polynomial_dfs> operator*(const polynomial_dfs& other) const {
                     polynomial_dfs result = *this;
 
                     size_t polynomial_s =
@@ -583,34 +587,32 @@ namespace nil {
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
-                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        co_await ThreadPool::get_instance().block_execution(
                             result.size(),
                             [&result, &tmp](std::size_t begin, std::size_t end) {
                                 for (std::size_t i = begin; i < end; i++) {
                                     result[i] *= tmp[i];
                                 }
-                            }));
+                            });
 
-                        return result;
+                        co_return result;
                     }
-                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                    co_await ThreadPool::get_instance().block_execution(
                         result.size(),
                         [&result, &other](std::size_t begin, std::size_t end) {
-//std::cout << "Multiplying range " << begin << " " << end << std::endl;
                             for (std::size_t i = begin; i < end; i++) {
                                 result[i] *= other[i];
                             }
-//std::cout << "Done Multiplying range " << begin << " " << end << std::endl;
-                        }));
+                        });
 
-                    return result;
+                    co_return result;
                 }
 
                 /**
                  * Perform the multiplication of two polynomials, polynomial A * polynomial B, 
                  * and stores result in polynomial A.
                  */
-                polynomial_dfs& operator*=(const polynomial_dfs& other) {
+                boost::asio::awaitable<void> operator*=(const polynomial_dfs& other) {
                     size_t polynomial_s =
                         detail::power_of_two(std::max({this->size(), other.size(), this->degree() + other.degree() + 1}));
 
@@ -626,24 +628,26 @@ namespace nil {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
 
-                        wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                        co_await ThreadPool::get_instance().block_execution(
                             this->size(),
                             [this, &tmp](std::size_t begin, std::size_t end) {
+std::cout << "Multiplying " << begin << " to " << end << " on thread " << std::this_thread::get_id() << std::endl;
                                 for (std::size_t i = begin; i < end; i++) {
                                     (*this)[i] *= tmp[i];
                                 }
-                            }));
-                        return *this;
+                            });
+                        co_return;
                     }
-                    wait_for_all(ThreadPool::get_instance().block_execution<void>(
+                    co_await ThreadPool::get_instance().block_execution(
                         this->size(),
                         [this, &other](std::size_t begin, std::size_t end) {
+std::cout << "Multiplying " << begin << " to " << end << " on thread " << std::this_thread::get_id() << std::endl;
                             for (std::size_t i = begin; i < end; i++) {
                                 (*this)[i] *= other[i];
                             }
-                        }));
+                        });
 
-                    return *this;
+                    co_return;
                 }
                 
                 /**

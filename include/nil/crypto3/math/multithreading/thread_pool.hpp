@@ -26,22 +26,20 @@
 #define CRYPTO3_THREAD_POOL_HPP
 
 #include <boost/asio/thread_pool.hpp>
-#include <boost/asio/post.hpp>
+#include <boost/asio/awaitable.hpp>
+#include <boost/asio/spawn.hpp>
+#include <boost/asio/co_spawn.hpp>
+#include <boost/asio/strand.hpp>
+#include <boost/asio/use_awaitable.hpp>
+#include <boost/asio/use_future.hpp>
 
 #include <functional>
-#include <future>
 #include <memory>
+#include <future>
 #include <stdexcept>
 
 namespace nil {
     namespace crypto3 {
-
-        template<class ReturnType>
-        void wait_for_all(const std::vector<std::future<ReturnType>>& futures) {
-            for (auto& f: futures) {
-                f.wait();
-            }
-        }
 
         class ThreadPool {
         public:
@@ -62,43 +60,46 @@ namespace nil {
             ThreadPool(const ThreadPool& obj)= delete;
             ThreadPool& operator=(const ThreadPool& obj)= delete;
 
-            template<class ReturnType>
-            inline std::future<ReturnType> post(std::function<ReturnType()> task) {
-                auto packaged_task = std::make_shared<std::packaged_task<ReturnType()>>(std::move(task));
-                std::future<ReturnType> fut = packaged_task->get_future();
-                boost::asio::post(pool, [packaged_task]() -> void { (*packaged_task)(); });
-                return fut;
-            }
- 
             // Waits for all the tasks to complete.
             inline void join() {
                 pool.join();
             }
 
             // Divides work into a ranges and makes calls to func in parallel.
-            template<class ReturnType>
-            std::vector<std::future<ReturnType>> block_execution(
+            boost::asio::awaitable<void> block_execution(
                     std::size_t elements_count,
-                    std::function<ReturnType(std::size_t begin, std::size_t end)> func) {
+                    std::function<void(std::size_t begin, std::size_t end)> func) {
 
-                std::vector<std::future<ReturnType>> fut;
                 std::size_t cpu_usage = std::min(elements_count, pool_size);
                 std::size_t element_per_cpu = elements_count / cpu_usage;
 
+                std::vector<boost::asio::awaitable<void>> awaitables;
                 for (int i = 0; i < cpu_usage; i++) {
                     auto begin = element_per_cpu * i;
                     auto end = (i == cpu_usage - 1) ? elements_count : element_per_cpu * (i + 1);
-                    fut.emplace_back(post<ReturnType>([begin, end, func]() {
-                        return func(begin, end);
-                    }));
+
+                    awaitables.emplace_back(std::move(boost::asio::co_spawn(pool,
+                        [begin, end, func]()->boost::asio::awaitable<void> {
+                            func(begin, end);
+                            co_return;
+                        },
+                        boost::asio::use_awaitable)));
                 }
-                return fut;
+
+                for (auto& awaitable: awaitables) {
+                    co_await std::move(awaitable);
+                }
+            }
+
+            template<class ReturnType>
+            std::future<ReturnType> execute(boost::asio::awaitable<ReturnType>&& awaitable) {
+                return boost::asio::co_spawn(pool, std::move(awaitable), boost::asio::use_future); 
             }
 
         private:
             inline ThreadPool(std::size_t pool_size)
                 : pool(pool_size)
-                , pool_size(pool_size){
+                , pool_size(pool_size) {
             }
 
             boost::asio::thread_pool pool;
