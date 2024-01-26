@@ -61,7 +61,7 @@ namespace nil {
                  * Below we make use of pseudocode from [CLRS 2n Ed, pp. 864].
                  * Also, note that it's the caller's responsibility to multiply by 1/N.
                  */
-                template<typename FieldType, typename Range> // const std::vector<typename FieldType::value_type> &omega_powers) {
+                template<typename FieldType, typename Range>
                 void basic_radix2_fft_cached(Range &a, const std::vector<typename FieldType::value_type> &omega_cache) {
                     typedef typename std::iterator_traits<decltype(std::begin(std::declval<Range>()))>::value_type
                         value_type;

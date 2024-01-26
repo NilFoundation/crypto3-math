@@ -27,7 +27,6 @@
 #ifndef CRYPTO3_MATH_POLYNOMIAL_POLYNOM_DFT_HPP
 #define CRYPTO3_MATH_POLYNOMIAL_POLYNOM_DFT_HPP
 
-#include "nil/crypto3/math/domains/evaluation_domain.hpp"
 #include <algorithm>
 #include <memory>
 #include <vector>
@@ -35,6 +34,7 @@
 #include <iterator>
 
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
+#include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 
 namespace nil {
