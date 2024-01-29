@@ -76,7 +76,7 @@ namespace nil {
                     std::function<ReturnType(std::size_t begin, std::size_t end)> func) {
 
                 std::vector<std::future<ReturnType>> fut;
-                std::size_t cpu_usage = std::min(elements_count, pool_size);
+                std::size_t cpu_usage = std::max((size_t)1, std::min(elements_count, pool_size));
                 std::size_t element_per_cpu = elements_count / cpu_usage;
 
                 // Pool #0 will take care of the lowest level of operations, like polynomial operations.
@@ -86,12 +86,13 @@ namespace nil {
                     element_per_cpu = elements_count / cpu_usage;
                 }
 
+                std::size_t begin = 0;
                 for (int i = 0; i < cpu_usage; i++) {
-                    auto begin = element_per_cpu * i;
-                    auto end = (i == cpu_usage - 1) ? elements_count : element_per_cpu * (i + 1);
+                    auto end = begin + (elements_count - begin) / (cpu_usage - i);
                     fut.emplace_back(post<ReturnType>([begin, end, func]() {
                         return func(begin, end);
                     }));
+                    begin = end;
                 }
                 return fut;
             }

@@ -1347,12 +1347,24 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_resize_perf_test, *boost::unit_test::disable
         values.push_back(nil::crypto3::algebra::random_element<FieldType>());
     }
 
+    polynomial_dfs<typename FieldType::value_type> poly = {
+        size - 1, values};
+ 
+    auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 10; ++i) {
-        polynomial_dfs<typename FieldType::value_type> poly = {
-            size - 1, values};
-        poly.resize(8 * size);
-        BOOST_CHECK(poly.size() == 8 * size);
+        auto poly2 = poly;
+        poly2.resize(8 * size);
+
+        BOOST_CHECK(poly2.size() == 8 * size);
     }
+
+    // Record the end time
+    auto end = std::chrono::high_resolution_clock::now();
+
+    // Calculate the duration
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+
+    std::cout << "Resize time: " << duration.count() << " microseconds." << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()
