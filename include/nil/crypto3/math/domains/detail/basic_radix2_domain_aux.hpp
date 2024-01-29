@@ -82,18 +82,19 @@ namespace nil {
                             std::swap(a[k], a[rk]);
                     }
 
-                    for (std::size_t s = 1, m = 1; s <= logn; ++s, m *= 2) { // invariant: m = 2^{s-1}
+                    // invariant: m = 2^{s-1}
+                    value_type t;
+                    for (std::size_t s = 1, m = 1, inc = n / 2; s <= logn; ++s, m <<= 1, inc >>= 1) {
                         // w_m is 2^s-th root of unity now
-                        const std::size_t inc = n / (2 * m);
-                        asm volatile("/* pre-inner */");
                         for (std::size_t k = 0; k < n; k += 2 * m) {
                             for (std::size_t j = 0, idx = 0; j < m; ++j, idx += inc) {
-                                const value_type t = a[k + j + m] * omega_cache[idx];
-                                a[k + j + m] = a[k + j] - t;
-                                a[k + j] = a[k + j] + t;
+                                t = std::move(a[k + j + m]);
+                                t *= omega_cache[idx];
+                                a[k + j + m] = a[k + j];
+                                a[k + j + m] -= t;
+                                a[k + j] += t;
                             }
                         }
-                        asm volatile("/* post-inner */");
                     }
                 }
 

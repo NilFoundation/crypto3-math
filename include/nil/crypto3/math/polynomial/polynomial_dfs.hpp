@@ -32,6 +32,7 @@
 #include <vector>
 #include <ostream>
 #include <iterator>
+#include <unordered_map>
 
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
@@ -556,12 +557,13 @@ namespace nil {
                 polynomial_dfs operator*(const polynomial_dfs& other) const {
                     polynomial_dfs result = *this;
 
-                    size_t polynomial_s =
+                    const size_t polynomial_s =
                         detail::power_of_two(std::max({this->size(), other.size(), this->degree() + other.degree() + 1}));
 
-                    if (result.size() < polynomial_s) {
-                        result.resize(polynomial_s);
+                    if (this->size() < polynomial_s) {
+                         result.resize(polynomial_s);
                     }
+
                     // Change the degree only here, after a possible resize, otherwise we have a polynomial
                     // with a high degree but small size, which sometimes segfaults.
                     result._d = this->degree() + other.degree();
@@ -582,7 +584,7 @@ namespace nil {
                  * and stores result in polynomial A.
                  */
                 polynomial_dfs& operator*=(const polynomial_dfs& other) {
-                    size_t polynomial_s =
+                    const size_t polynomial_s =
                         detail::power_of_two(std::max({this->size(), other.size(), this->degree() + other.degree() + 1}));
 
                     if (this->size() < polynomial_s) {
@@ -596,6 +598,37 @@ namespace nil {
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
+
+                        std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(), std::multiplies<FieldValueType>());
+                        return *this;
+                    }
+                    std::transform(this->begin(), this->end(), other.begin(), this->begin(), std::multiplies<FieldValueType>());
+                    return *this;
+                }
+
+                /**
+                 * Performs multiplication of two polynomials, but with domain caches
+                 */
+                polynomial_dfs& cached_multiplication(
+                        const polynomial_dfs& other,
+                        std::shared_ptr<evaluation_domain<typename value_type::field_type>> domain = nullptr,
+                        std::shared_ptr<evaluation_domain<typename value_type::field_type>> other_domain = nullptr,
+                        std::shared_ptr<evaluation_domain<typename value_type::field_type>> new_domain = nullptr) {
+
+                    const size_t polynomial_s =
+                        detail::power_of_two(std::max({this->size(), other.size(), this->degree() + other.degree() + 1}));
+
+                    if (this->size() < polynomial_s) {
+                        this->resize(polynomial_s, domain, new_domain);
+                    }
+
+                    // Change the degree only here, after a possible resize, otherwise we have a polynomial
+                    // with a high degree but small size, which sometimes segfaults.
+                    this->_d += other._d;
+
+                    if (other.size() < polynomial_s) {
+                        polynomial_dfs tmp(other);
+                        tmp.resize(polynomial_s, other_domain, new_domain);
 
                         std::transform(tmp.begin(), tmp.end(), this->begin(), this->begin(), std::multiplies<FieldValueType>());
                         return *this;
@@ -813,6 +846,40 @@ namespace nil {
                     os << "]";
                 }
                 return os;
+            }
+
+            template<typename FieldType>
+            static inline polynomial_dfs<typename FieldType::value_type> polynomial_product(
+                    std::vector<math::polynomial_dfs<typename FieldType::value_type>> multipliers){
+
+                std::unordered_map<std::size_t, std::shared_ptr<evaluation_domain<FieldType>>> domain_cache;
+                for (std::size_t stride = 1; stride < multipliers.size(); stride <<= 1) {
+                    const std::size_t double_stride = stride << 1;
+                    for(std::size_t i = 0; i + stride < multipliers.size(); i += double_stride) {
+                        const std::size_t current_domain_size = multipliers[i].size();
+                        const std::size_t next_domain_size = multipliers[i + stride].size();
+                        const std::size_t new_domain_size =
+                            detail::power_of_two(std::max(
+                                {current_domain_size,
+                                 next_domain_size,
+                                 multipliers[i].degree() + multipliers[i + stride].degree() + 1}));
+                        if (domain_cache.find(new_domain_size) == domain_cache.end()) {
+                            domain_cache[new_domain_size] = make_evaluation_domain<FieldType>(new_domain_size);
+                        }
+                        if (domain_cache.find(current_domain_size) == domain_cache.end()) {
+                            domain_cache[current_domain_size] = make_evaluation_domain<FieldType>(current_domain_size);
+                        }
+                        if (domain_cache.find(next_domain_size) == domain_cache.end()) {
+                            domain_cache[next_domain_size] = make_evaluation_domain<FieldType>(next_domain_size);
+                        }
+                        multipliers[i].cached_multiplication(
+                            multipliers[i + stride],
+                            domain_cache[current_domain_size],
+                            domain_cache[next_domain_size],
+                            domain_cache[new_domain_size]);
+                    }
+                }
+                return multipliers[0];
             }
 
         }    // namespace math

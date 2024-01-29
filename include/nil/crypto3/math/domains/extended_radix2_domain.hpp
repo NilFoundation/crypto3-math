@@ -27,7 +27,6 @@
 #define CRYPTO3_MATH_EXTENDED_RADIX2_DOMAIN_HPP
 
 #include <vector>
-#include <optional>
 
 #include <nil/crypto3/math/domains/evaluation_domain.hpp>
 #include <nil/crypto3/math/domains/basic_radix2_domain.hpp>
@@ -48,13 +47,13 @@ namespace nil {
             class extended_radix2_domain : public evaluation_domain<FieldType, ValueType> {
                 typedef typename FieldType::value_type field_value_type;
                 typedef ValueType value_type;
+                typedef std::pair<std::vector<field_value_type>, std::vector<field_value_type>> cache_type;
 
-                std::optional<std::pair<std::vector<field_value_type>, std::vector<field_value_type>>>
-                    fft_cache;
+                std::unique_ptr<cache_type> fft_cache;
 
                 void create_fft_cache() {
-                    fft_cache.emplace(std::make_pair(std::vector<field_value_type>(),
-                                                         std::vector<field_value_type>()));
+                    fft_cache = std::make_unique<cache_type>(std::vector<field_value_type>(),
+                                                             std::vector<field_value_type>());
                     detail::create_fft_cache<FieldType>(small_m, omega, fft_cache->first);
                     detail::create_fft_cache<FieldType>(small_m, omega.inversed(), fft_cache->second);
                 }
@@ -67,7 +66,6 @@ namespace nil {
 
                 extended_radix2_domain(const std::size_t m)
                         : evaluation_domain<FieldType, ValueType>(m),
-                          fft_cache(std::nullopt),
                           small_m(m / 2),
                           omega(unity_root<FieldType>(small_m)),
                           shift(detail::coset_shift<FieldType>()) {
@@ -104,7 +102,7 @@ namespace nil {
                         shift_i *= shift;
                     }
 
-                    if (!fft_cache.has_value()) {
+                    if (fft_cache == nullptr) {
                         create_fft_cache();
                     }
                     detail::basic_radix2_fft_cached<FieldType>(a0, fft_cache->first);
@@ -129,7 +127,7 @@ namespace nil {
                     std::vector<value_type> a0(a.begin(), a.begin() + small_m);
                     std::vector<value_type> a1(a.begin() + small_m, a.end());
 
-                    if (!fft_cache.has_value()) {
+                    if (fft_cache == nullptr) {
                         create_fft_cache();
                     }
                     detail::basic_radix2_fft_cached<FieldType>(a0, fft_cache->second);

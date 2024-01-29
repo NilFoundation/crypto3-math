@@ -48,11 +48,11 @@ namespace nil {
             class basic_radix2_domain : public evaluation_domain<FieldType, ValueType> {
                 typedef typename FieldType::value_type field_value_type;
                 typedef ValueType value_type;
-
-                std::optional<std::pair<std::vector<value_type>, std::vector<value_type>>> fft_cache;
+                typedef std::pair<std::vector<value_type>, std::vector<value_type>> cache_type;
+                std::unique_ptr<cache_type> fft_cache;
 
                 void create_fft_cache() {
-                    fft_cache.emplace(std::make_pair(std::vector<value_type>(), std::vector<value_type>()));
+                    fft_cache = std::make_unique<cache_type>(std::vector<value_type>(), std::vector<value_type>());
                     detail::create_fft_cache<FieldType>(this->m, omega, fft_cache->first);
                     detail::create_fft_cache<FieldType>(this->m, omega.inversed(), fft_cache->second);
                 }
@@ -84,7 +84,7 @@ namespace nil {
                         }
                     }
 
-                    if (!fft_cache.has_value()) {
+                    if (fft_cache == nullptr) {
                         create_fft_cache();
                     }
                     detail::basic_radix2_fft_cached<FieldType>(a, fft_cache->first);
@@ -99,7 +99,7 @@ namespace nil {
                         }
                     }
 
-                    if (!fft_cache.has_value()) {
+                    if (fft_cache == nullptr) {
                         create_fft_cache();
                     }
                     detail::basic_radix2_fft_cached<FieldType>(a, fft_cache->second);
