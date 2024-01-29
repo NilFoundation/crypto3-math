@@ -33,6 +33,9 @@
 #include <nil/crypto3/math/polynomial/basis_change.hpp>
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
 
+#include <nil/crypto3/math/multithreading/thread_pool.hpp>
+#include <nil/crypto3/math/multithreading/parallelization_utils.hpp>
+
 namespace nil {
     namespace crypto3 {
         namespace math {
@@ -61,9 +64,15 @@ namespace nil {
                     arithmetic_generator = field_value_type(fields::arithmetic_params<FieldType>::arithmetic_generator);
 
                     arithmetic_sequence = std::vector<field_value_type>(this->m);
-                    for (std::size_t i = 0; i < this->m; i++) {
-                        arithmetic_sequence[i] = arithmetic_generator * field_value_type(i);
-                    }
+
+                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
+                        arithmetic_sequence.size(),
+                        // We need the lambda to be mutable, to be able to modify iterators captured by value.
+                        [this](std::size_t begin, std::size_t end) {
+                            for (std::size_t i = begin; i < end; i++) {
+                                this->arithmetic_sequence[i] *= field_value_type(i);
+                            }
+                        }));
 
                     precomputation_sentinel = true;
                 }
@@ -111,9 +120,8 @@ namespace nil {
                     multiplication(a, a, S);
                     a.resize(this->m);
 
-                    for (std::size_t i = 0; i < this->m; i++) {
-                        a[i] = a[i] * S[i].inversed();
-                    }
+                    nil::crypto3::in_place_parallel_transform(a.begin(), a.end(), S.begin(),
+                        [](value_type& a_i, const field_value_type& S_i){a_i *= S_i.inversed().data;});
                 }
 
                 void inverse_fft(std::vector<value_type> &a) override {
@@ -325,17 +333,16 @@ namespace nil {
                         multiplication(x, x, t);
                     }
 
-                    for (std::size_t i = 0; i < this->m + 1; i++) {
-                        H[i] += (x[i] * coeff);
-                    }
+                    nil::crypto3::in_place_parallel_transform(H.begin(), H.end(), x.begin(),
+                            [&coeff](field_value_type& H_i, const field_value_type& x_i){H_i += x_i * coeff;});
                 }
 
                 void divide_by_z_on_coset(std::vector<field_value_type> &P) override {
                     const field_value_type coset = this->arithmetic_generator; /* coset in arithmetic sequence? */
                     const field_value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
-                    for (std::size_t i = 0; i < this->m; ++i) {
-                        P[i] *= Z_inverse_at_coset;
-                    }
+
+                    nil::crypto3::parallel_foreach(P.begin(), P.end(),
+                            [&Z_inverse_at_coset](field_value_type& P_i){P_i *= Z_inverse_at_coset;});
                 }
             };
         }    // namespace math

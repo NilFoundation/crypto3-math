@@ -34,6 +34,10 @@
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/detail/field_utils.hpp>
 
+#include <nil/crypto3/math/multithreading/thread_pool.hpp>
+#include <nil/crypto3/math/multithreading/parallelization_utils.hpp>
+
+
 namespace nil {
     namespace crypto3 {
         namespace math {
@@ -58,30 +62,53 @@ namespace nil {
                         throw std::invalid_argument("expected n == (1u << logn)");
 
                     /* swapping in place (from Storer's book) */
-                    for (std::size_t k = 0; k < n; ++k) {
-                        const std::size_t rk = bitreverse(k, logn);
-                        if (k < rk)
-                            std::swap(a[k], a[rk]);
-                    }
-
-                    std::size_t m = 1;    // invariant: m = 2^{s-1}
-                    for (std::size_t s = 1; s <= logn; ++s) {
-                        // w_m is 2^s-th root of unity now
-                        const field_value_type w_m = omega.pow(n / (2 * m));
-
-                        asm volatile("/* pre-inner */");
-                        for (std::size_t k = 0; k < n; k += 2 * m) {
-                            field_value_type w = field_value_type::one();
-                            for (std::size_t j = 0; j < m; ++j) {
-                                const value_type t = a[k + j + m] * w;
-                                a[k + j + m] = a[k + j] - t;
-                                a[k + j] = a[k + j] + t;
-                                w *= w_m;
+                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
+                        n,
+                        [logn, &a](std::size_t begin, std::size_t end) {
+                            for (std::size_t k = begin; k < end; k++) {
+                                const std::size_t rk = crypto3::math::detail::bitreverse(k, logn);
+                                if (k < rk)
+                                    std::swap(a[k], a[rk]);
                             }
                         }
-                        asm volatile("/* post-inner */");
+                    ));
+
+                    std::size_t m = 1;    // invariant: m = 2^{s-1}
+                    field_value_type w_m;
+
+                    for (std::size_t s = 1; s <= logn; ++s) {
+                        // w_m is 2^s-th root of unity now
+                        w_m = omega.pow(n / (2 * m));
+                        size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
+
+                        // Here we can parallelize on the both cycles with 'k' and 'm', because for each value of k and m
+                        // the ranges of array 'a' used do not intersect. Think of these 2 cycles as 1.
+                        wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
+                            m * count_k,
+                            [&a, m, count_k, &w_m](std::size_t begin, std::size_t end) {
+                                size_t current_index = begin;
+                                size_t start_k = begin / m;
+                                for (std::size_t k_index = start_k; k_index < count_k; ++k_index) {
+                                    std::size_t k = k_index * 2 * m;
+
+                                    std::size_t j = start_k == k_index ? begin % m: 0;
+                                    field_value_type w = w_m.pow(j);
+
+                                    for (; j < m; ++j) {
+                                        const value_type t = a[k + j + m] * w;
+                                        a[k + j + m] = a[k + j] - t;
+                                        a[k + j] += t;
+                                        w *= w_m;
+
+                                        ++current_index;
+                                        if (current_index == end)
+                                            return;
+                                    }
+                                }
+                            }
+                        ));
                         m *= 2;
-                    }
+                    } 
                 }
 
                 /**

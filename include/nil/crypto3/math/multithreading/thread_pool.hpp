@@ -35,26 +35,22 @@
 #include <memory>
 #include <stdexcept>
 
+
 namespace nil {
     namespace crypto3 {
-
-        template<class ReturnType>
-        void wait_for_all(const std::vector<std::future<ReturnType>>& futures) {
-            for (auto& f: futures) {
-                f.wait();
-            }
-        }
 
         class ThreadPool {
         public:
 
             static ThreadPool& get_instance(std::size_t pool_number, std::size_t pool_size = std::thread::hardware_concurrency()) {
-                static std::map<std::size_t, std::unique_ptr<ThreadPool>> instances;
-
-                if (instances.find(pool_number) == instances.end() || !instances[pool_number]) {
-                    instances[pool_number].reset(new ThreadPool(pool_number, pool_size));
-                }
-                return *instances[pool_number]; 
+                static ThreadPool instance0(0, pool_size);
+                static ThreadPool instance1(1, pool_size);
+                
+                if (pool_number == 0)
+                    return instance0;
+                if (pool_number == 1)
+                    return instance1;
+                throw std::invalid_argument("Invalid instance of thread pool requested.");
             }
 
             ThreadPool(const ThreadPool& obj)= delete;

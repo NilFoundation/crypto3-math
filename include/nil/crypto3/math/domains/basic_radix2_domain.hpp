@@ -34,6 +34,8 @@
 #include <nil/crypto3/math/domains/detail/basic_radix2_domain_aux.hpp>
 #include <nil/crypto3/math/algorithms/unity_root.hpp>
 #include <nil/crypto3/math/polynomial/polynomial.hpp>
+#include <nil/crypto3/math/multithreading/parallelization_utils.hpp>
+
 
 namespace nil {
     namespace crypto3 {
@@ -92,9 +94,7 @@ namespace nil {
                     detail::basic_radix2_fft<FieldType>(a, omega.inversed());
 
                     const field_value_type sconst = field_value_type(a.size()).inversed();
-                    for (std::size_t i = 0; i < a.size(); ++i) {
-                        a[i] = a[i] * sconst;
-                    }
+                    nil::crypto3::parallel_foreach(a.begin(), a.end(), [&sconst](value_type& v){v *= sconst.data;});
                 }
 
                 std::vector<field_value_type> evaluate_all_lagrange_polynomials(const field_value_type &t) override {
@@ -141,9 +141,7 @@ namespace nil {
                 void divide_by_z_on_coset(std::vector<field_value_type> &P) override {
                     const field_value_type coset = fields::arithmetic_params<FieldType>::multiplicative_generator;
                     const field_value_type Z_inverse_at_coset = this->compute_vanishing_polynomial(coset).inversed();
-                    for (std::size_t i = 0; i < this->m; ++i) {
-                        P[i] *= Z_inverse_at_coset;
-                    }
+                    nil::crypto3::parallel_foreach(P.begin(), P.end(), [&Z_inverse_at_coset](field_value_type& v){v *= Z_inverse_at_coset;});
                 }
 
                 bool operator==(const basic_radix2_domain &rhs) const {

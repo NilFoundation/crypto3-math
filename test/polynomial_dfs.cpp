@@ -1310,30 +1310,25 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_perf_test, *boost::unit_test::disab
 }
 
 BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test, *boost::unit_test::disabled()) {
-    size_t size = 8;
+    size_t size = 131072 * 4;
 
     polynomial_dfs<typename FieldType::value_type> poly = {
-        size / 4, size, nil::crypto3::algebra::random_element<FieldType>()};
+        size / 128, size, nil::crypto3::algebra::random_element<FieldType>()};
 
-    std::vector<polynomial_dfs<typename FieldType::value_type>> poly4(40, poly);
+    std::vector<polynomial_dfs<typename FieldType::value_type>> poly4(64, poly);
 
     auto start = std::chrono::high_resolution_clock::now();
     nil::crypto3::wait_for_all(nil::crypto3::ThreadPool::get_instance(1).block_execution<void>(
        poly4.size(),
        [&poly4, &poly](std::size_t begin, std::size_t end) {
            for (std::size_t i = begin; i < end; i++) {
-               for (int j = 0; j < 1; ++j)
+               for (int j = 0; j < 32; ++j)
                    poly4[i] *= poly;
            }
        }));
 
     for (int i = 1; i < poly4.size(); ++i) {
-        if (poly4[i] != poly4[0]) {
-            std::cout << i << std::endl;
-            std::cout << poly4[i] << std::endl << std::endl;
-            std::cout << poly4[0] << std::endl << std::endl;
-            return;
-        }
+        BOOST_CHECK(poly4[i] == poly4[0]);
     }
 
     // Record the end time

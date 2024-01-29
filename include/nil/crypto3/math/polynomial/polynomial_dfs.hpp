@@ -35,6 +35,7 @@
 #include <nil/crypto3/math/polynomial/basic_operations.hpp>
 #include <nil/crypto3/math/algorithms/make_evaluation_domain.hpp>
 #include <nil/crypto3/math/multithreading/thread_pool.hpp>
+#include <nil/crypto3/math/multithreading/parallelization_utils.hpp>
 
 namespace nil {
     namespace crypto3 {
@@ -437,24 +438,12 @@ namespace nil {
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
-                        wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
-                            result.size(),
-                            [&result, &tmp](std::size_t begin, std::size_t end) {
-                                for (std::size_t i = begin; i < end; i++) {
-                                    result[i] += tmp[i];
-                                }
-                            }));
+                        nil::crypto3::parallel_transform(tmp.begin(), tmp.end(), result.begin(), result.begin(),
+                                       std::plus<FieldValueType>()); 
                         return result;
                     }
 
-                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
-                        result.size(),
-                        [&result, &other](std::size_t begin, std::size_t end) {
-                            for (std::size_t i = begin; i < end; i++) {
-                                result[i] += other[i];
-                            }
-                        }));
-                    std::transform(other.begin(), other.end(), result.begin(), result.begin(),
+                    nil::crypto3::parallel_transform(other.begin(), other.end(), result.begin(), result.begin(),
                                    std::plus<FieldValueType>());
                     return result;
                 }
@@ -468,27 +457,18 @@ namespace nil {
                         this->resize(other.size());
                     }
                     this->_d = std::max(this->_d, other._d);
+
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
 
-                        wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
-                            this->size(),
-                            [this, &tmp](std::size_t begin, std::size_t end) {
-                                for (std::size_t i = begin; i < end; i++) {
-                                    (*this)[i] += tmp[i];
-                                }
-                            }));
+                        nil::crypto3::in_place_parallel_transform(this->begin(), this->end(), tmp.begin(),
+                            [](FieldValueType& v1, const FieldValueType& v2){v1+=v2;});
                         return *this;
                     }
-
-                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
-                        this->size(),
-                        [this, &other](std::size_t begin, std::size_t end) {
-                            for (std::size_t i = begin; i < end; i++) {
-                                (*this)[i] += other[i];
-                            }
-                        }));
+                    
+                    nil::crypto3::in_place_parallel_transform(this->begin(), this->end(), other.begin(),
+                            [](FieldValueType& v1, const FieldValueType& v2){v1+=v2;});
 
                     return *this;
                 }
@@ -508,7 +488,7 @@ namespace nil {
                  */
                 polynomial_dfs operator-() const {
                     polynomial_dfs result(this->_d, this->begin(), this->end());
-                    std::transform(this->begin(), this->end(), result.begin(), std::negate<FieldValueType>());
+                    nil::crypto3::parallel_transform(this->begin(), this->end(), result.begin(), std::negate<FieldValueType>());
                     return result;
                 }
 
@@ -525,11 +505,11 @@ namespace nil {
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
-                        std::transform(result.begin(), result.end(), tmp.begin(), result.begin(),
+                        nil::crypto3::parallel_transform(result.begin(), result.end(), tmp.begin(), result.begin(),
                                        std::minus<FieldValueType>());
                         return result;
                     }
-                    std::transform(result.begin(), result.end(), other.begin(), result.begin(),
+                    nil::crypto3::parallel_transform(result.begin(), result.end(), other.begin(), result.begin(),
                                    std::minus<FieldValueType>());
                     return result;
                 }
@@ -547,10 +527,10 @@ namespace nil {
                     if (this->size() > other.size()) {
                         polynomial_dfs tmp(other);
                         tmp.resize(this->size());
-                        std::transform(this->begin(), this->end(), tmp.begin(), this->begin(), std::minus<FieldValueType>());
+                        nil::crypto3::parallel_transform(this->begin(), this->end(), tmp.begin(), this->begin(), std::minus<FieldValueType>());
                         return *this;
                     }
-                    std::transform(this->begin(), this->end(), other.begin(), this->begin(), std::minus<FieldValueType>());
+                    nil::crypto3::parallel_transform(this->begin(), this->end(), other.begin(), this->begin(), std::minus<FieldValueType>());
                     return *this;
                 }
 
@@ -583,24 +563,10 @@ namespace nil {
                     if (other.size() < polynomial_s) {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
-                        wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
-                            result.size(),
-                            [&result, &tmp](std::size_t begin, std::size_t end) {
-                                for (std::size_t i = begin; i < end; i++) {
-                                    result[i] *= tmp[i];
-                                }
-                            }));
-
+                        nil::crypto3::parallel_transform(tmp.begin(), tmp.end(), result.begin(), result.begin(), std::multiplies<FieldValueType>());
                         return result;
                     }
-                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
-                        result.size(),
-                        [&result, &other](std::size_t begin, std::size_t end) {
-                            for (std::size_t i = begin; i < end; i++) {
-                                result[i] *= other[i];
-                            }
-                        }));
-
+                    nil::crypto3::parallel_transform(other.begin(), other.end(), result.begin(), result.begin(), std::multiplies<FieldValueType>());
                     return result;
                 }
 
@@ -624,23 +590,11 @@ namespace nil {
                         polynomial_dfs tmp(other);
                         tmp.resize(polynomial_s);
 
-                        wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
-                            this->size(),
-                            [this, &tmp](std::size_t begin, std::size_t end) {
-                                for (std::size_t i = begin; i < end; i++) {
-                                    (*this)[i] *= tmp[i];
-                                }
-                            }));
+                        nil::crypto3::parallel_transform(tmp.begin(), tmp.end(), this->begin(), this->begin(), std::multiplies<FieldValueType>());
                         return *this;
                     }
-                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
-                        this->size(),
-                        [this, &other](std::size_t begin, std::size_t end) {
-                            for (std::size_t i = begin; i < end; i++) {
-                                (*this)[i] *= other[i];
-                            }
-                        }));
 
+                    nil::crypto3::parallel_transform(this->begin(), this->end(), other.begin(), this->begin(), std::multiplies<FieldValueType>());
                     return *this;
                 }
                 
@@ -712,7 +666,7 @@ namespace nil {
                     detail::basic_radix2_fft<FieldType>(tmp, omega.inversed());
 
                     const value_type sconst = value_type(this->size()).inversed();
-                    std::transform(tmp.begin(),
+                    nil::crypto3::parallel_transform(tmp.begin(),
                                    tmp.end(),
                                    tmp.begin(),
                                    std::bind(std::multiplies<value_type>(), sconst, std::placeholders::_1));
