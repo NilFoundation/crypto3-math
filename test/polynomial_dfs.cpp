@@ -1310,7 +1310,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_2_levels_test) {
             // Inside this multiplication lower level pool is used.
             poly4[i] *= poly;
         },
-        nil::crypto3::ThreadPool::PoolID::HIGH_LEVEL_POOL_ID);
+        nil::crypto3::ThreadPool::PoolLevel::HIGH);
 
     for (int i = 1; i < poly4.size(); ++i) {
         BOOST_CHECK(poly4[i] == poly4[0]);
@@ -1340,7 +1340,7 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test, *boost::unit_test:
 
     auto start = std::chrono::high_resolution_clock::now();
     nil::crypto3::wait_for_all(
-        nil::crypto3::ThreadPool::get_instance(nil::crypto3::ThreadPool::PoolID::HIGH_LEVEL_POOL_ID).block_execution<void>(
+        nil::crypto3::ThreadPool::get_instance(nil::crypto3::ThreadPool::PoolLevel::HIGH).block_execution<void>(
             poly4.size(),
             [&poly4, &poly](std::size_t begin, std::size_t end) {
                 for (std::size_t i = begin; i < end; i++) {

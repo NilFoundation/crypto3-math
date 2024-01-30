@@ -79,7 +79,7 @@ namespace nil {
 
                         // Here we can parallelize on the both loops with 'k' and 'm', because for each value of k and m
                         // the ranges of array 'a' used do not intersect. Think of these 2 loops as 1.
-                        wait_for_all(ThreadPool::get_instance(ThreadPool::PoolID::LOW_LEVEL_POOL_ID).block_execution<void>(
+                        wait_for_all(ThreadPool::get_instance(ThreadPool::PoolLevel::LOW).block_execution<void>(
                             m * count_k,
                             [&a, m, count_k, &w_m](std::size_t begin, std::size_t end) {
                                 size_t current_index = begin;

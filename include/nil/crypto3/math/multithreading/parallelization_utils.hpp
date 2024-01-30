@@ -43,7 +43,7 @@ namespace nil {
         template<class InputIt1, class InputIt2, class OutputIt, class BinaryOperation>
         void parallel_transform(InputIt1 first1, InputIt1 last1, InputIt2 first2,
                                 OutputIt d_first, BinaryOperation binary_op,
-                                ThreadPool::PoolID pool_id = ThreadPool::PoolID::LOW_LEVEL_POOL_ID) {
+                                ThreadPool::PoolLevel pool_id = ThreadPool::PoolLevel::LOW) {
 
             wait_for_all(ThreadPool::get_instance(pool_id).block_execution<void>(
                 std::distance(first1, last1),
@@ -65,7 +65,7 @@ namespace nil {
         template< class InputIt, class OutputIt, class UnaryOperation >
         void parallel_transform(InputIt first1, InputIt last1,
                                 OutputIt d_first, UnaryOperation unary_op,
-                                ThreadPool::PoolID pool_id = ThreadPool::PoolID::LOW_LEVEL_POOL_ID) {
+                                ThreadPool::PoolLevel pool_id = ThreadPool::PoolLevel::LOW) {
 
             wait_for_all(ThreadPool::get_instance(pool_id).block_execution<void>(
                 std::distance(first1, last1),
@@ -86,7 +86,7 @@ namespace nil {
         template<class InputIt1, class InputIt2, class BinaryOperation>
         void in_place_parallel_transform(InputIt1 first1, InputIt1 last1, InputIt2 first2,
                                          BinaryOperation binary_op,
-                                         ThreadPool::PoolID pool_id = ThreadPool::PoolID::LOW_LEVEL_POOL_ID) {
+                                         ThreadPool::PoolLevel pool_id = ThreadPool::PoolLevel::LOW) {
 
             wait_for_all(ThreadPool::get_instance(pool_id).block_execution<void>(
                 std::distance(first1, last1),
@@ -106,7 +106,7 @@ namespace nil {
         // UnaryOperation is supposed to modify the object in-place.
         template<class InputIt, class UnaryOperation>
         void parallel_foreach(InputIt first1, InputIt last1, UnaryOperation unary_op,
-                              ThreadPool::PoolID pool_id = ThreadPool::PoolID::LOW_LEVEL_POOL_ID) {
+                              ThreadPool::PoolLevel pool_id = ThreadPool::PoolLevel::LOW) {
 
             wait_for_all(ThreadPool::get_instance(pool_id).block_execution<void>(
                 std::distance(first1, last1),
@@ -122,7 +122,7 @@ namespace nil {
 
         // Calls function func for each value between [start, end).
         void parallel_for(std::size_t start, std::size_t end, std::function<void(std::size_t index)> func,
-                          ThreadPool::PoolID pool_id = ThreadPool::PoolID::LOW_LEVEL_POOL_ID) {
+                          ThreadPool::PoolLevel pool_id = ThreadPool::PoolLevel::LOW) {
 
             wait_for_all(ThreadPool::get_instance(pool_id).block_execution<void>(
                 end - start,
