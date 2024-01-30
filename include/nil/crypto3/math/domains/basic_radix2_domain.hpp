@@ -48,11 +48,11 @@ namespace nil {
             class basic_radix2_domain : public evaluation_domain<FieldType, ValueType> {
                 typedef typename FieldType::value_type field_value_type;
                 typedef ValueType value_type;
-                typedef std::pair<std::vector<value_type>, std::vector<value_type>> cache_type;
+                typedef std::pair<std::vector<field_value_type>, std::vector<field_value_type>> cache_type;
                 std::unique_ptr<cache_type> fft_cache;
 
                 void create_fft_cache() {
-                    fft_cache = std::make_unique<cache_type>(std::vector<value_type>(), std::vector<value_type>());
+                    fft_cache = std::make_unique<cache_type>(std::vector<field_value_type>(), std::vector<field_value_type>());
                     detail::create_fft_cache<FieldType>(this->m, omega, fft_cache->first);
                     detail::create_fft_cache<FieldType>(this->m, omega.inversed(), fft_cache->second);
                 }
