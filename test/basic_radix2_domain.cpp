@@ -150,4 +150,8 @@ BOOST_AUTO_TEST_CASE(fft_vs_multiplication_benchmark, *boost::unit_test::disable
              << " ms" << std::endl;
 }
 
+BOOST_AUTO_TEST_CASE(empty_test) {
+    // We do this to prevent the CI from failing due to the lack of tests here.
+}
+
 BOOST_AUTO_TEST_SUITE_END()
