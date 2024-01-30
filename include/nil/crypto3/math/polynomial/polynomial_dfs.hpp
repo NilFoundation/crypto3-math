@@ -863,14 +863,10 @@ namespace nil {
                                 {current_domain_size,
                                  next_domain_size,
                                  multipliers[i].degree() + multipliers[i + stride].degree() + 1}));
-                        if (domain_cache.find(new_domain_size) == domain_cache.end()) {
-                            domain_cache[new_domain_size] = make_evaluation_domain<FieldType>(new_domain_size);
-                        }
-                        if (domain_cache.find(current_domain_size) == domain_cache.end()) {
-                            domain_cache[current_domain_size] = make_evaluation_domain<FieldType>(current_domain_size);
-                        }
-                        if (domain_cache.find(next_domain_size) == domain_cache.end()) {
-                            domain_cache[next_domain_size] = make_evaluation_domain<FieldType>(next_domain_size);
+                        for (auto domain_size : {current_domain_size, next_domain_size, new_domain_size}) {
+                            if (domain_cache.find(domain_size) == domain_cache.end()) {
+                                domain_cache[domain_size] = make_evaluation_domain<FieldType>(domain_size);
+                            }
                         }
                         multipliers[i].cached_multiplication(
                             multipliers[i + stride],
