@@ -94,7 +94,9 @@ namespace nil {
                     detail::basic_radix2_fft<FieldType>(a, omega.inversed());
 
                     const field_value_type sconst = field_value_type(a.size()).inversed();
-                    nil::crypto3::parallel_foreach(a.begin(), a.end(), [&sconst](value_type& v){v *= sconst.data;});
+                    nil::crypto3::parallel_foreach(a.begin(), a.end(), [&sconst](value_type& a_i){
+                        a_i *= sconst.data;
+                    });
                 }
 
                 std::vector<field_value_type> evaluate_all_lagrange_polynomials(const field_value_type &t) override {

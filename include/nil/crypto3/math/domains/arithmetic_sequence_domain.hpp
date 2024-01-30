@@ -65,14 +65,10 @@ namespace nil {
 
                     arithmetic_sequence = std::vector<field_value_type>(this->m);
 
-                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
-                        arithmetic_sequence.size(),
-                        // We need the lambda to be mutable, to be able to modify iterators captured by value.
-                        [this](std::size_t begin, std::size_t end) {
-                            for (std::size_t i = begin; i < end; i++) {
-                                this->arithmetic_sequence[i] *= field_value_type(i);
-                            }
-                        }));
+                    nil::crypto3::parallel_for(0, arithmetic_sequence.size(), 
+                        [this](std::size_t i) {
+                            this->arithmetic_sequence[i] *= field_value_type(i);
+                        });
 
                     precomputation_sentinel = true;
                 }

@@ -62,28 +62,24 @@ namespace nil {
                         throw std::invalid_argument("expected n == (1u << logn)");
 
                     /* swapping in place (from Storer's book) */
-                    wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
-                        n,
-                        [logn, &a](std::size_t begin, std::size_t end) {
-                            for (std::size_t k = begin; k < end; k++) {
-                                const std::size_t rk = crypto3::math::detail::bitreverse(k, logn);
-                                if (k < rk)
-                                    std::swap(a[k], a[rk]);
-                            }
+                    nil::crypto3::parallel_for(0, n, 
+                        [logn, &a](std::size_t k) {
+                            const std::size_t rk = crypto3::math::detail::bitreverse(k, logn);
+                            if (k < rk)
+                                std::swap(a[k], a[rk]);
                         }
-                    ));
+                    );
 
                     std::size_t m = 1;    // invariant: m = 2^{s-1}
-                    field_value_type w_m;
 
                     for (std::size_t s = 1; s <= logn; ++s) {
                         // w_m is 2^s-th root of unity now
-                        w_m = omega.pow(n / (2 * m));
+                        field_value_type w_m = omega.pow(n / (2 * m));
                         size_t count_k = n / (2 * m) + (n % (2 * m) ? 1 : 0);
 
-                        // Here we can parallelize on the both cycles with 'k' and 'm', because for each value of k and m
-                        // the ranges of array 'a' used do not intersect. Think of these 2 cycles as 1.
-                        wait_for_all(ThreadPool::get_instance(0).block_execution<void>(
+                        // Here we can parallelize on the both loops with 'k' and 'm', because for each value of k and m
+                        // the ranges of array 'a' used do not intersect. Think of these 2 loops as 1.
+                        wait_for_all(ThreadPool::get_instance(ThreadPool::PoolID::LOW_LEVEL_POOL_ID).block_execution<void>(
                             m * count_k,
                             [&a, m, count_k, &w_m](std::size_t begin, std::size_t end) {
                                 size_t current_index = begin;
@@ -91,7 +87,7 @@ namespace nil {
                                 for (std::size_t k_index = start_k; k_index < count_k; ++k_index) {
                                     std::size_t k = k_index * 2 * m;
 
-                                    std::size_t j = start_k == k_index ? begin % m: 0;
+                                    std::size_t j = (start_k == k_index) ? (begin % m): 0;
                                     field_value_type w = w_m.pow(j);
 
                                     for (; j < m; ++j) {

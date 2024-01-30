@@ -1296,6 +1296,27 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_zero_one_test) {
     BOOST_CHECK((small_poly - one * small_poly).is_zero());
 }
 
+BOOST_AUTO_TEST_CASE(polynomial_dfs_2_levels_test) {
+    size_t size = 131072;
+
+    polynomial_dfs<typename FieldType::value_type> poly = {
+        size / 128, size, nil::crypto3::algebra::random_element<FieldType>()};
+
+    std::vector<polynomial_dfs<typename FieldType::value_type>> poly4(4, poly);
+
+    nil::crypto3::parallel_for(
+        0, poly4.size(),
+        [&poly4, &poly](std::size_t i) {
+            // Inside this multiplication lower level pool is used.
+            poly4[i] *= poly;
+        },
+        nil::crypto3::ThreadPool::PoolID::HIGH_LEVEL_POOL_ID);
+
+    for (int i = 1; i < poly4.size(); ++i) {
+        BOOST_CHECK(poly4[i] == poly4[0]);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(polynomial_dfs_addition_perf_test, *boost::unit_test::disabled()) {
     std::vector<typename FieldType::value_type> values;
     for (int i = 0; i < 131072; i++) {
@@ -1318,14 +1339,15 @@ BOOST_AUTO_TEST_CASE(polynomial_dfs_multiplication_perf_test, *boost::unit_test:
     std::vector<polynomial_dfs<typename FieldType::value_type>> poly4(64, poly);
 
     auto start = std::chrono::high_resolution_clock::now();
-    nil::crypto3::wait_for_all(nil::crypto3::ThreadPool::get_instance(1).block_execution<void>(
-       poly4.size(),
-       [&poly4, &poly](std::size_t begin, std::size_t end) {
-           for (std::size_t i = begin; i < end; i++) {
-               for (int j = 0; j < 32; ++j)
-                   poly4[i] *= poly;
-           }
-       }));
+    nil::crypto3::wait_for_all(
+        nil::crypto3::ThreadPool::get_instance(nil::crypto3::ThreadPool::PoolID::HIGH_LEVEL_POOL_ID).block_execution<void>(
+            poly4.size(),
+            [&poly4, &poly](std::size_t begin, std::size_t end) {
+                for (std::size_t i = begin; i < end; i++) {
+                    for (int j = 0; j < 32; ++j)
+                        poly4[i] *= poly;
+                }
+            }));
 
     for (int i = 1; i < poly4.size(); ++i) {
         BOOST_CHECK(poly4[i] == poly4[0]);

@@ -42,14 +42,23 @@ namespace nil {
         class ThreadPool {
         public:
 
-            static ThreadPool& get_instance(std::size_t pool_number, std::size_t pool_size = std::thread::hardware_concurrency()) {
-                static ThreadPool instance0(0, pool_size);
-                static ThreadPool instance1(1, pool_size);
+            enum class PoolID {
+                LOW_LEVEL_POOL_ID,
+                HIGH_LEVEL_POOL_ID
+            };
+
+            /** Returns a thread pool, based on the pool_id. pool with LOW_LEVEL_POOL_ID is normally used for low-level operations, like polynomial
+             *  operations and fft. Any code that uses these operations and needs to be parallel will submit it's tasks to pool with HIGH_LEVEL_POOL_ID.
+             *  Submission of higher level tasks to low level pool will immediately result to a deadlock.
+             */
+            static ThreadPool& get_instance(PoolID pool_id, std::size_t pool_size = std::thread::hardware_concurrency()) {
+                static ThreadPool instance_for_low_level(PoolID::LOW_LEVEL_POOL_ID, pool_size);
+                static ThreadPool instance_for_higher_level(PoolID::HIGH_LEVEL_POOL_ID, pool_size);
                 
-                if (pool_number == 0)
-                    return instance0;
-                if (pool_number == 1)
-                    return instance1;
+                if (pool_id == PoolID::LOW_LEVEL_POOL_ID)
+                    return instance_for_low_level;
+                if (pool_id == PoolID::HIGH_LEVEL_POOL_ID)
+                    return instance_for_higher_level;
                 throw std::invalid_argument("Invalid instance of thread pool requested.");
             }
 
@@ -69,7 +78,7 @@ namespace nil {
                 pool.join();
             }
 
-            // Divides work into a ranges and makes calls to func in parallel.
+            // Divides work into chunks and makes calls to 'func' in parallel.
             template<class ReturnType>
             std::vector<std::future<ReturnType>> block_execution(
                     std::size_t elements_count,
@@ -81,34 +90,37 @@ namespace nil {
 
                 // Pool #0 will take care of the lowest level of operations, like polynomial operations.
                 // We want the minimal size of element_per_cpu to be 65536, otherwise the cores are not loaded.
-                if (pool_number == 0 && element_per_cpu < 65536) {
-                    cpu_usage = elements_count / 65536 + elements_count % 65536 ? 1 : 0;
+                if (pool_id == PoolID::LOW_LEVEL_POOL_ID && element_per_cpu < POOL_0_MIN_CHUNK_SIZE) {
+                    cpu_usage = elements_count / POOL_0_MIN_CHUNK_SIZE + elements_count % POOL_0_MIN_CHUNK_SIZE ? 1 : 0;
                     element_per_cpu = elements_count / cpu_usage;
                 }
 
                 std::size_t begin = 0;
                 for (int i = 0; i < cpu_usage; i++) {
-                    auto end = begin + (elements_count - begin) / (cpu_usage - i);
+                    auto begin = element_per_cpu * i;
+                    auto end = (i == cpu_usage - 1) ? elements_count : element_per_cpu * (i + 1);
                     fut.emplace_back(post<ReturnType>([begin, end, func]() {
                         return func(begin, end);
                     }));
-                    begin = end;
                 }
                 return fut;
             }
 
         private:
-            inline ThreadPool(std::size_t pool_number, std::size_t pool_size)
+            inline ThreadPool(PoolID pool_id, std::size_t pool_size)
                 : pool(pool_size)
                 , pool_size(pool_size)
-                , pool_number(pool_number) {
+                , pool_id(pool_id) {
             }
 
             boost::asio::thread_pool pool;
             std::size_t pool_size;
 
-            // Each pool with know it's number.
-            std::size_t pool_number;
+            PoolID pool_id; 
+
+            // For pool #0 we have experimentally found that operations over chunks of <65536 elements
+            // do not load the cores. In case we have smaller chunks, it's better to load less cores.
+            const std::size_t POOL_0_MIN_CHUNK_SIZE = 65536;
         };
 
     }        // namespace crypto3
