@@ -61,6 +61,11 @@ namespace nil {
                     return m;
                 }
 
+                /*
+                 * Virtual destructor.
+                 */
+                virtual ~evaluation_domain() {};
+
                 /**
                  * Get the unity root.
                  */
