@@ -872,6 +872,8 @@ namespace nil {
                             domain_cache[current_domain_size],
                             domain_cache[next_domain_size],
                             domain_cache[new_domain_size]);
+                        // Free memory we are not going to use anymore.
+                        multipliers[i + stride] = polynomial_dfs<typename FieldType::value_type>();
                     }
                 }
                 return multipliers[0];

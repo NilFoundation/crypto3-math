@@ -71,7 +71,6 @@ BOOST_AUTO_TEST_CASE(basic_radix2_domain_benchmark, *boost::unit_test::disabled(
     std::chrono::time_point<std::chrono::high_resolution_clock> cache_start(std::chrono::high_resolution_clock::now());
     std::vector<std::shared_ptr<std::vector<value_type>>> omega_powers(fft_count);
     for (std::size_t i = 0; i < fft_count; i++) {
-        const std::size_t logn = log2(fft_sizes[i]);
         omega_powers[i].reset(new std::vector<value_type>);
         omega_powers[i]->resize(fft_sizes[i]);
         (*omega_powers[i])[0] = unity_root<FieldType>(fft_sizes[i]);
@@ -112,9 +111,9 @@ BOOST_AUTO_TEST_CASE(basic_radix2_domain_benchmark, *boost::unit_test::disabled(
               << " ms" << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(fft_vs_multiplication_benchmark, *boost::unit_test::disabled()) {
+BOOST_AUTO_TEST_CASE(fft_vs_multiplication_benchmark) {
     using value_type = FieldType::value_type;
-    const std::size_t fft_size = 1 << 20;
+    const std::size_t fft_size = 1 << 16;
     std::vector<value_type> test_data(fft_size);
     std::chrono::time_point<std::chrono::high_resolution_clock> gen_start(std::chrono::high_resolution_clock::now());
     for (std::size_t i = 0; i < fft_size; ++i) {
@@ -148,10 +147,6 @@ BOOST_AUTO_TEST_CASE(fft_vs_multiplication_benchmark, *boost::unit_test::disable
                     std::chrono::high_resolution_clock::now() - start_mult)
                  .count()
              << " ms" << std::endl;
-}
-
-BOOST_AUTO_TEST_CASE(empty_test) {
-    // We do this to prevent the CI from failing due to the lack of tests here.
 }
 
 BOOST_AUTO_TEST_SUITE_END()

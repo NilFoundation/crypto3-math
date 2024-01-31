@@ -47,21 +47,19 @@ namespace nil {
             class step_radix2_domain : public evaluation_domain<FieldType, ValueType> {
                 typedef typename FieldType::value_type field_value_type;
                 typedef ValueType value_type;
-                typedef std::pair<
-                            std::pair<std::vector<field_value_type>, std::vector<field_value_type>>,
-                            std::pair<std::vector<field_value_type>, std::vector<field_value_type>>> cache_type;
+                typedef std::pair<std::vector<field_value_type>, std::vector<field_value_type>> cache_type;
 
-                std::unique_ptr<cache_type> fft_cache;
+                std::unique_ptr<cache_type> small_fft_cache, big_fft_cache;
 
                 void create_fft_cache() {
-                    fft_cache = std::make_unique<cache_type>(std::make_pair(std::vector<field_value_type>(),
-                                                                            std::vector<field_value_type>()),
-                                                             std::make_pair(std::vector<field_value_type>(),
-                                                                            std::vector<field_value_type>()));
-                    detail::create_fft_cache<FieldType>(big_m, big_omega, fft_cache->first.first);
-                    detail::create_fft_cache<FieldType>(big_m, big_omega.inversed(), fft_cache->first.second);
-                    detail::create_fft_cache<FieldType>(small_m, small_omega, fft_cache->second.first);
-                    detail::create_fft_cache<FieldType>(small_m, small_omega.inversed(), fft_cache->second.second);
+                    small_fft_cache = std::make_unique<cache_type>(
+                        std::make_pair(std::vector<field_value_type>(), std::vector<field_value_type>()));
+                    big_fft_cache = std::make_unique<cache_type>(
+                        std::make_pair(std::vector<field_value_type>(), std::vector<field_value_type>()));
+                    detail::create_fft_cache<FieldType>(big_m, big_omega, big_fft_cache->first);
+                    detail::create_fft_cache<FieldType>(big_m, big_omega.inversed(), big_fft_cache->second);
+                    detail::create_fft_cache<FieldType>(small_m, small_omega, small_fft_cache->first);
+                    detail::create_fft_cache<FieldType>(small_m, small_omega.inversed(), small_fft_cache->second);
                 }
             public:
                 typedef FieldType field_type;
@@ -114,11 +112,11 @@ namespace nil {
                         }
                     }
 
-                    if (fft_cache == nullptr) {
+                    if (small_fft_cache == nullptr) {
                         create_fft_cache();
                     }
-                    detail::basic_radix2_fft_cached<FieldType>(c, fft_cache->first.first);
-                    detail::basic_radix2_fft_cached<FieldType>(e, fft_cache->second.first);
+                    detail::basic_radix2_fft_cached<FieldType>(c, big_fft_cache->first);
+                    detail::basic_radix2_fft_cached<FieldType>(e, small_fft_cache->first);
 
                     for (std::size_t i = 0; i < big_m; ++i) {
                         a[i] = c[i];
@@ -135,11 +133,11 @@ namespace nil {
                     std::vector<value_type> U0(a.begin(), a.begin() + big_m);
                     std::vector<value_type> U1(a.begin() + big_m, a.end());
 
-                    if (fft_cache == nullptr) {
+                    if (small_fft_cache == nullptr) {
                         create_fft_cache();
                     }
-                    detail::basic_radix2_fft_cached<FieldType>(U0, fft_cache->first.second);
-                    detail::basic_radix2_fft_cached<FieldType>(U1, fft_cache->second.second);
+                    detail::basic_radix2_fft_cached<FieldType>(U0, big_fft_cache->second);
+                    detail::basic_radix2_fft_cached<FieldType>(U1, small_fft_cache->second);
 
                     const field_value_type U0_size_inv = field_value_type(big_m).inversed();
                     for (std::size_t i = 0; i < big_m; ++i) {
