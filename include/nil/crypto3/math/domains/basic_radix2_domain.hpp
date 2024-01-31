@@ -25,7 +25,7 @@
 
 #ifndef CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_HPP
 #define CRYPTO3_MATH_BASIC_RADIX2_DOMAIN_HPP
-
+// Empty change to run CI
 #include <vector>
 
 #include <nil/crypto3/math/detail/field_utils.hpp>
