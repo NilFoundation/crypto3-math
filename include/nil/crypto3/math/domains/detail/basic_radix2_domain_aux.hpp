@@ -88,8 +88,8 @@ namespace nil {
                         for (std::size_t k = 0; k < n; k += 2 * m) {
                             for (std::size_t j = 0, idx = 0; j < m; ++j, idx += inc) {
                                 t = std::move(a[k + j + m]);
-                                t = t * omega_cache[idx];
-                                a[k + j + m] = a[k + j];
+                                t *= omega_cache[idx].data;
+                                a[k + j + m] = std::move(a[k + j]);
                                 a[k + j + m] -= t;
                                 a[k + j] += t;
                             }
