@@ -87,9 +87,9 @@ namespace nil {
                         // w_m is 2^s-th root of unity now
                         for (std::size_t k = 0; k < n; k += 2 * m) {
                             for (std::size_t j = 0, idx = 0; j < m; ++j, idx += inc) {
-                                t = std::move(a[k + j + m]);
+                                t = a[k + j + m];
                                 t *= omega_cache[idx].data;
-                                a[k + j + m] = std::move(a[k + j]);
+                                a[k + j + m] = a[k + j];
                                 a[k + j + m] -= t;
                                 a[k + j] += t;
                             }
