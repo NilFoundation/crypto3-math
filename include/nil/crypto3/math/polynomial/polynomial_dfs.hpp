@@ -858,12 +858,15 @@ namespace nil {
                 std::unordered_map<std::size_t, std::shared_ptr<evaluation_domain<FieldType>>> domain_cache;
 
                 std::size_t min_domain_size = std::numeric_limits<std::size_t>::max();
+                std::size_t max_domain_size = 0;
                 std::size_t total_degree = 0;
                 for (std::size_t i = 0; i < multipliers.size(); i++) {
                     min_domain_size = std::min(min_domain_size, multipliers[i].size());
+                    max_domain_size = std::max(max_domain_size, multipliers[i].size());
                     total_degree += multipliers[i].degree();
                 }
-                std::size_t max_domain_size = detail::power_of_two(total_degree + 1);
+                max_domain_size = std::max(max_domain_size, detail::power_of_two(total_degree + 1));
+
                 std::vector<std::size_t> needed_domain_sizes;
                 for (std::size_t i = min_domain_size; i <= max_domain_size; i *= 2) {
                     needed_domain_sizes.push_back(i);
