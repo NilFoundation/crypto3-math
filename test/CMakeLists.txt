@@ -19,8 +19,11 @@ cm_test_link_libraries(${CMAKE_WORKSPACE_NAME}_${CURRENT_PROJECT_NAME}
 
                        ${Boost_LIBRARIES})
 
+add_custom_target(math_runtime_tests)
+
 macro(define_math_test name)
     set(test_name "math_${name}_test")
+    add_dependencies(math_runtime_tests ${test_name})
 
     set(additional_args "")
     if(ENABLE_JUNIT_TEST_OUTPUT)
@@ -65,3 +68,7 @@ set(TESTS_NAMES
 foreach(TEST_NAME ${TESTS_NAMES})
     define_math_test(${TEST_NAME})
 endforeach()
+
+if(BUILD_PERF_TESTS)
+    cm_add_test_subdirectory(bench_test)
+endif()

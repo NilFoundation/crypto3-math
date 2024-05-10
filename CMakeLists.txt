@@ -42,6 +42,7 @@ cm_find_package(CM)
 include(CMDeploy)
 
 option(BUILD_TESTS "Build unit tests" FALSE)
+option(BUILD_PERF_TESTS "Build performance benchmark tests" FALSE)
 
 list(APPEND ${CURRENT_PROJECT_NAME}_PUBLIC_HEADERS)
 
